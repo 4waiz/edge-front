@@ -24,12 +24,8 @@
     .row{ display:grid; grid-template-columns: 1fr auto; gap:8px }
     textarea{ width:100%; background:#0f1218; color:var(--text); border:1px solid #1f2937; border-radius:12px; padding:12px }
     .tiny{ font-size:12px; color:var(--muted); text-align:center }
-    .toggle{ display:flex; align-items:center; gap:8px; justify-content:center }
-    .img-out{ display:grid; place-items:center; padding:12px; background:#0f1218; border-radius:12px }
-    .img-out img{ max-width:100%; border-radius:12px }
     .pill{ border-radius:999px; padding:12px 16px; background:#0f1218; border:1px solid #1f2937; text-align:center }
     .error{ background:#052a2a; border:1px solid #0d4040; color:#c0f2f2; padding:12px; border-radius:12px }
-    .disabled{ opacity:.5; filter:grayscale(1); pointer-events:none }
   </style>
 </head>
 <body>
@@ -52,20 +48,18 @@
 
       <!-- Chat -->
       <section id="chatSec" class="grid hide">
-        <label class="toggle"><input type="checkbox" id="imgMode" /> <span id="imgLabel">🖼️ Image mode</span></label>
         <div class="chatbox">
           <div id="msgs" class="msgs"></div>
           <div id="errBox" class="error hide"></div>
           <div class="row">
-            <textarea id="input" rows="3" placeholder="Type a message or image prompt..."></textarea>
+            <textarea id="input" rows="3" placeholder="Type a message..."></textarea>
             <button id="send" class="btn primary">Send</button>
           </div>
         </div>
-        <div id="imgOut" class="img-out hide"></div>
         <div class="tiny" id="footerInfo">—</div>
       </section>
 
-      <!-- Voice -->
+      <!-- Voice (UI kept; backend returns 501 so it's a harmless stub) -->
       <section id="voiceSec" class="grid hide">
         <div class="pill" id="status">Tap start to record…</div>
         <div class="modes" style="margin:0 auto">
@@ -82,6 +76,7 @@
   </div>
 
   <script>
+    // Point this to your Space
     const API_BASE = "https://4waiz-EDGEAI.hf.space";
 
     const $ = (id) => document.getElementById(id);
@@ -89,8 +84,7 @@
     const btnChat = $('btnChat'), btnVoice = $('btnVoice');
     const statusDot = $('statusDot'), modelLabel = $('modelLabel');
     const msgsEl = $('msgs'), inputEl = $('input'), sendBtn = $('send');
-    const imgMode = $('imgMode'), imgOut = $('imgOut'), errBox = $('errBox'), imgLabel = $('imgLabel');
-    const footerInfo = $('footerInfo');
+    const errBox = $('errBox'), footerInfo = $('footerInfo');
     const startRec = $('startRec'), stopRec = $('stopRec'), statusEl = $('status'), audioEl = $('audio');
 
     function show(sec){ chatSec.classList.add('hide'); voiceSec.classList.add('hide'); sec.classList.remove('hide'); }
@@ -123,17 +117,10 @@
         const cfg = await fetch(`${API_BASE}/config`).then(r=>r.json()).catch(()=>({}));
         const textInfo = (cfg.backend === 'local'
           ? `Chat: Local (${cfg.text_model})`
-          : `Chat: HF (${cfg.text_model})`) + ` • Images: ${cfg.image_model}`;
+          : `Chat: HF (${cfg.text_model})`);
         modelLabel.textContent = textInfo;
         footerInfo.textContent = textInfo + (cfg.hf_token ? ' • HF token ✓' : ' • no HF token');
-        // Disable Image mode if no token
-        if(!cfg.hf_token){
-          imgMode.checked = false; imgMode.disabled = true;
-          imgLabel.textContent = '🖼️ Image mode (token required)';
-          imgLabel.title = 'Set HF_TOKEN in backend to enable';
-        }
-        // Show chat by default
-        show(chatSec);
+        show(chatSec); // default
       } catch {
         statusDot.style.background = '#ef4444';
         modelLabel.textContent = 'Backend offline';
@@ -143,17 +130,6 @@
     async function sendChat(){
       clearError();
       const text = inputEl.value.trim(); if(!text) return; inputEl.value='';
-      // Image request
-      if(imgMode.checked){
-        imgOut.classList.remove('hide'); imgOut.textContent = 'Generating…';
-        try{
-          const data = await postJSON(`${API_BASE}/image`, { prompt: text }, 120000);
-          if(data.image_b64) imgOut.innerHTML = `<img alt="generated" src="data:image/png;base64,${data.image_b64}"/>`;
-          else imgOut.textContent = 'Image error: ' + (data.error || 'unknown');
-        }catch(e){ imgOut.textContent = 'Image error: ' + (e.message || 'failed'); }
-        return;
-      }
-      // Text chat
       push('user', text); sendBtn.disabled = true;
       try{
         const data = await postJSON(`${API_BASE}/chat`, { messages }, 90000);
@@ -166,7 +142,7 @@
     sendBtn.onclick = sendChat;
     inputEl.addEventListener('keydown', e => { if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); sendChat(); } });
 
-    // Voice — stubbed STT (kept from previous version)
+    // Voice — stubbed STT/TTS (backend returns 501)
     let mediaRecorder, chunks = [];
     startRec.onclick = async ()=>{
       try{
@@ -191,7 +167,7 @@
         $('voiceReply').textContent = data.reply || '';
         const speak = await fetch(`${API_BASE}/speak`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ text: data.reply || '' }) });
         const audioBlob = await speak.blob(); audioEl.src = URL.createObjectURL(audioBlob); audioEl.classList.remove('hide'); await audioEl.play();
-        statusEl.textContent='Done';
+        statusEl.textContent='Done (TTS may be disabled)';
       }catch(e){ console.error('Voice flow error:', e); statusEl.textContent='Error: ' + (e.message || 'failed'); }
     }
   </script>
