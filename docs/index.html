@@ -108,7 +108,6 @@
       } finally { clearTimeout(t); }
     }
 
-    // Ping backend + configure UI
     (async () => {
       try {
         const h = await fetch(`${API_BASE}/health`, { cache: 'no-store' });
