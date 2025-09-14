@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>EDGE AI</title>
+  <style>
+    :root { --bg:#0b0c10; --panel:#111317; --muted:#94a3b8; --text:#e5e7eb; --accent:#22c55e; --accent2:#3b82f6; --red:#ef4444 }
+    *{ box-sizing:border-box } body{ margin:0; font-family: ui-sans-serif, system-ui; background:var(--bg); color:var(--text) }
+    .wrap{ min-height:100vh; display:grid; place-items:center; padding:24px }
+    .card{ width:min(960px,100%); background:var(--panel); border:1px solid #1f2937; border-radius:16px; padding:24px; box-shadow:0 20px 60px rgba(0,0,0,.35) }
+    .title{ text-align:center; font-weight:800; font-size:clamp(24px,4vw,40px); margin:6px 0 }
+    .subtitle{ text-align:center; color:var(--muted); margin:0 0 22px }
+    .modes{ display:flex; gap:12px; justify-content:center; margin:8px 0 12px }
+    .btn{ border:0; padding:14px 18px; border-radius:14px; font-weight:800; cursor:pointer }
+    .primary{ background:var(--accent); color:#062010 } .secondary{ background:var(--accent2); color:#041224 } .danger{ background:var(--red); color:#2c0101 }
+    .hide{ display:none } .grid{ display:grid; gap:14px }
+    #statusRow{ display:flex; align-items:center; justify-content:center; gap:10px; font-size:12px; color:var(--muted) }
+    #statusDot{ width:10px; height:10px; border-radius:50%; background:#999; }
+    .chatbox{ display:grid; grid-template-rows:1fr auto; gap:10px; height:60vh }
+    .msgs{ overflow:auto; border-radius:12px; background:#0f1218; padding:12px; display:grid; gap:10px }
+    .msg{ padding:10px 12px; border-radius:12px; line-height:1.4; white-space:pre-wrap }
+    .user{ background:#1f2937; justify-self:end } .assistant{ background:#0b4c5f }
+    .row{ display:grid; grid-template-columns: 1fr auto; gap:8px }
+    textarea{ width:100%; background:#0f1218; color:var(--text); border:1px solid #1f2937; border-radius:12px; padding:12px }
+    .tiny{ font-size:12px; color:var(--muted); text-align:center }
+    .toggle{ display:flex; align-items:center; gap:8px; justify-content:center }
+    .img-out{ display:grid; place-items:center; padding:12px; background:#0f1218; border-radius:12px }
+    .img-out img{ max-width:100%; border-radius:12px }
+    .pill{ border-radius:999px; padding:12px 16px; background:#0f1218; border:1px solid #1f2937; text-align:center }
+    .error{ background:#052a2a; border:1px solid #0d4040; color:#c0f2f2; padding:12px; border-radius:12px }
+    .disabled{ opacity:.5; filter:grayscale(1); pointer-events:none }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card grid">
+      <div>
+        <div class="title">Welcome to EDGE AI</div>
+        <div class="subtitle">Choose a mode to get started</div>
+      </div>
+
+      <div class="modes">
+        <button id="btnChat" class="btn primary">💬 Chat</button>
+        <button id="btnVoice" class="btn secondary">🎙️ Voice</button>
+      </div>
+
+      <div id="statusRow">
+        <div id="statusDot" title="Backend connectivity"></div>
+        <span id="modelLabel">Checking backend…</span>
+      </div>
+
+      <!-- Chat -->
+      <section id="chatSec" class="grid hide">
+        <label class="toggle"><input type="checkbox" id="imgMode" /> <span id="imgLabel">🖼️ Image mode</span></label>
+        <div class="chatbox">
+          <div id="msgs" class="msgs"></div>
+          <div id="errBox" class="error hide"></div>
+          <div class="row">
+            <textarea id="input" rows="3" placeholder="Type a message or image prompt..."></textarea>
+            <button id="send" class="btn primary">Send</button>
+          </div>
+        </div>
+        <div id="imgOut" class="img-out hide"></div>
+        <div class="tiny" id="footerInfo">—</div>
+      </section>
+
+      <!-- Voice -->
+      <section id="voiceSec" class="grid hide">
+        <div class="pill" id="status">Tap start to record…</div>
+        <div class="modes" style="margin:0 auto">
+          <button id="startRec" class="btn secondary">Start</button>
+          <button id="stopRec" class="btn danger" disabled>Stop & Ask</button>
+        </div>
+        <div class="grid">
+          <div class="pill"><strong>Transcript:</strong> <span id="transcript">—</span></div>
+          <div class="pill"><strong>Assistant:</strong> <span id="voiceReply">—</span></div>
+          <audio id="audio" controls class="hide"></audio>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = "https://4waiz-EDGEAI.hf.space";
+
+    const $ = (id) => document.getElementById(id);
+    const chatSec = $('chatSec'), voiceSec = $('voiceSec');
+    const btnChat = $('btnChat'), btnVoice = $('btnVoice');
+    const statusDot = $('statusDot'), modelLabel = $('modelLabel');
+    const msgsEl = $('msgs'), inputEl = $('input'), sendBtn = $('send');
+    const imgMode = $('imgMode'), imgOut = $('imgOut'), errBox = $('errBox'), imgLabel = $('imgLabel');
+    const footerInfo = $('footerInfo');
+    const startRec = $('startRec'), stopRec = $('stopRec'), statusEl = $('status'), audioEl = $('audio');
+
+    function show(sec){ chatSec.classList.add('hide'); voiceSec.classList.add('hide'); sec.classList.remove('hide'); }
+    btnChat.onclick = () => show(chatSec);
+    btnVoice.onclick = () => show(voiceSec);
+
+    let messages = [];
+    function push(role, content){
+      messages.push({ role, content });
+      const d = document.createElement('div'); d.className = `msg ${role}`; d.textContent = content;
+      msgsEl.appendChild(d); msgsEl.scrollTop = msgsEl.scrollHeight;
+    }
+    function setError(msg){ errBox.textContent = msg; errBox.classList.remove('hide'); }
+    function clearError(){ errBox.classList.add('hide'); }
+
+    async function postJSON(url, payload, timeoutMs = 60000){
+      const ctrl = new AbortController(); const t = setTimeout(()=>ctrl.abort(), timeoutMs);
+      try{
+        const res = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload), signal: ctrl.signal });
+        if(!res.ok){ const txt = await res.text().catch(()=> ''); throw new Error(`HTTP ${res.status} ${res.statusText} – ${txt.slice(0,200)}`); }
+        return await res.json();
+      } finally { clearTimeout(t); }
+    }
+
+    // Ping backend + configure UI
+    (async () => {
+      try {
+        const h = await fetch(`${API_BASE}/health`, { cache: 'no-store' });
+        statusDot.style.background = h.ok ? '#22c55e' : '#ef4444';
+        const cfg = await fetch(`${API_BASE}/config`).then(r=>r.json()).catch(()=>({}));
+        const textInfo = (cfg.backend === 'local'
+          ? `Chat: Local (${cfg.text_model})`
+          : `Chat: HF (${cfg.text_model})`) + ` • Images: ${cfg.image_model}`;
+        modelLabel.textContent = textInfo;
+        footerInfo.textContent = textInfo + (cfg.hf_token ? ' • HF token ✓' : ' • no HF token');
+        // Disable Image mode if no token
+        if(!cfg.hf_token){
+          imgMode.checked = false; imgMode.disabled = true;
+          imgLabel.textContent = '🖼️ Image mode (token required)';
+          imgLabel.title = 'Set HF_TOKEN in backend to enable';
+        }
+        // Show chat by default
+        show(chatSec);
+      } catch {
+        statusDot.style.background = '#ef4444';
+        modelLabel.textContent = 'Backend offline';
+      }
+    })();
+
+    async function sendChat(){
+      clearError();
+      const text = inputEl.value.trim(); if(!text) return; inputEl.value='';
+      // Image request
+      if(imgMode.checked){
+        imgOut.classList.remove('hide'); imgOut.textContent = 'Generating…';
+        try{
+          const data = await postJSON(`${API_BASE}/image`, { prompt: text }, 120000);
+          if(data.image_b64) imgOut.innerHTML = `<img alt="generated" src="data:image/png;base64,${data.image_b64}"/>`;
+          else imgOut.textContent = 'Image error: ' + (data.error || 'unknown');
+        }catch(e){ imgOut.textContent = 'Image error: ' + (e.message || 'failed'); }
+        return;
+      }
+      // Text chat
+      push('user', text); sendBtn.disabled = true;
+      try{
+        const data = await postJSON(`${API_BASE}/chat`, { messages }, 90000);
+        push('assistant', data.reply || '[no reply]');
+      }catch(e){
+        console.error('Chat error:', e);
+        setError('Error: ' + (e.message || 'request failed'));
+      }finally{ sendBtn.disabled = false; }
+    }
+    sendBtn.onclick = sendChat;
+    inputEl.addEventListener('keydown', e => { if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); sendChat(); } });
+
+    // Voice — stubbed STT (kept from previous version)
+    let mediaRecorder, chunks = [];
+    startRec.onclick = async ()=>{
+      try{
+        const stream = await navigator.mediaDevices.getUserMedia({ audio:true });
+        mediaRecorder = new MediaRecorder(stream); chunks=[];
+        mediaRecorder.ondataavailable = e => { if(e.data.size>0) chunks.push(e.data); };
+        mediaRecorder.onstop = onStop;
+        mediaRecorder.start(); startRec.disabled=true; stopRec.disabled=false; statusEl.textContent='Recording…';
+      }catch(e){ statusEl.textContent='Mic error: ' + (e.message || 'permission denied'); }
+    };
+    stopRec.onclick = ()=>{ if(mediaRecorder && mediaRecorder.state!=='inactive') mediaRecorder.stop();
+      startRec.disabled=false; stopRec.disabled=true; statusEl.textContent='Processing…'; };
+
+    async function onStop(){
+      const blob = new Blob(chunks, { type:'audio/webm' });
+      const fd = new FormData(); fd.append('file', blob, 'voice.webm');
+      try{
+        const tr = await fetch(`${API_BASE}/transcribe`, { method:'POST', body: fd }); const { text } = await tr.json().catch(()=>({text:''}));
+        $('transcript').textContent = text || '(no transcript)';
+        const prompt = text && text.trim() ? text : "Say a short hello.";
+        const data = await postJSON(`${API_BASE}/chat`, { messages:[{role:'user', content: prompt}] }, 90000);
+        $('voiceReply').textContent = data.reply || '';
+        const speak = await fetch(`${API_BASE}/speak`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ text: data.reply || '' }) });
+        const audioBlob = await speak.blob(); audioEl.src = URL.createObjectURL(audioBlob); audioEl.classList.remove('hide'); await audioEl.play();
+        statusEl.textContent='Done';
+      }catch(e){ console.error('Voice flow error:', e); statusEl.textContent='Error: ' + (e.message || 'failed'); }
+    }
+  </script>
+</body>
+</html>
