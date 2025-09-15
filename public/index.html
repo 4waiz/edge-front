@@ -9,8 +9,7 @@
   body{ margin:0; background:var(--bg); color:var(--text); font:16px/1.5 system-ui,Segoe UI,Roboto }
   .wrap{ max-width:980px; margin:28px auto; padding:0 16px }
   .card{ background:var(--panel); border:1px solid var(--border); border-radius:14px; padding:20px; display:grid; gap:14px }
-  .head{ display:flex; justify-content:center; align-items:center; padding:6px 0 4px }
-  .head img{ height:54px }
+  /* removed header logo */
   .log{ background:var(--input); border:1px solid var(--border); border-radius:12px; padding:12px; height:50vh; overflow:auto }
   .msg{ max-width:78%; padding:10px 12px; border-radius:10px; margin:8px 0; white-space:pre-wrap }
   .u{ margin-left:auto; background:#24303a }
@@ -26,13 +25,16 @@
   .dot{ width:10px; height:10px; border-radius:50%; background:#666 }
   .mic.on .dot{ background:#ef4444; box-shadow:0 0 10px #ef4444 }
   select, input[type=range]{ accent-color:var(--accent); }
-  .muted{ color:var(--muted); font-size:12px; text-align:center }
+  /* footer with big logo */
+  .foot{ display:flex; gap:14px; align-items:center; justify-content:center; margin-top:6px; color:var(--muted); text-align:center; flex-wrap:wrap }
+  .foot-logo{ height:92px; width:auto; filter:drop-shadow(0 6px 18px rgba(0,0,0,.35)); }
+  @media (max-width:520px){ .foot-logo{ height:80px; } }
+  .foot a{ color:var(--text); text-decoration:none; border-bottom:1px dotted var(--accent); }
+  .foot a:hover{ color:var(--accent); }
 </style>
 
 <div class="wrap">
   <div class="card">
-    <div class="head"><img src="/logo.png" alt="EDGE" /></div>
-
     <!-- Conversation -->
     <div id="log" class="log"></div>
     <div id="error" class="err"></div>
@@ -40,7 +42,7 @@
     <!-- Voice toolbar -->
     <div class="toolbar">
       <div id="mic" class="mic" title="Click to start/stop listening">
-        <div class="dot"></div><b id="micLabel">Mic</b><span id="micHint" class="muted">— click to talk</span>
+        <div class="dot"></div><b id="micLabel">Mic</b><span id="micHint" style="color:var(--muted);font-size:12px">— click to talk</span>
       </div>
 
       <label class="pill">
@@ -64,7 +66,11 @@
       <button id="send">Send</button>
     </div>
 
-    <div class="muted">Powered by Groq via Vercel Functions</div>
+    <!-- Footer -->
+    <div class="foot">
+      <img src="/logo.png" alt="EDGE" class="foot-logo" />
+      <div>Created by <a href="https://www.linkedin.com/in/awaiz-ahmed/" target="_blank" rel="noopener">Awaiz Ahmed</a></div>
+    </div>
   </div>
 </div>
 
@@ -85,7 +91,6 @@
 
   const history = [];
 
-  // ------- Helpers -------
   function push(role, text) {
     const d = document.createElement('div');
     d.className = 'msg ' + (role === 'user' ? 'u' : 'a');
@@ -99,13 +104,12 @@
   }
   async function postJSON(url, payload){
     const r = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
-    const text = await r.text(); // show raw error if JSON fails
+    const text = await r.text();
     let data; try { data = JSON.parse(text); } catch { data = { error:'Bad JSON', detail:text }; }
     if(!r.ok || data.error) throw new Error((data.error || `HTTP ${r.status}`) + (data.detail ? ` — ${typeof data.detail === 'string' ? data.detail : JSON.stringify(data.detail).slice(0,200)}` : ''));
     return data;
   }
 
-  // ------- Send text to backend -------
   async function send() {
     showError('');
     const text = t.value.trim();
@@ -132,7 +136,7 @@
   btn.onclick = send;
   t.addEventListener('keydown', (e)=>{ if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); send(); }});
 
-  // ------- TTS (speechSynthesis) -------
+  // ------- TTS -------
   let voices = [];
   function loadVoices(){
     voices = speechSynthesis.getVoices();
@@ -142,7 +146,6 @@
       opt.value = v.name; opt.textContent = `${v.name} (${v.lang})`;
       voiceSel.appendChild(opt);
     });
-    // pick a reasonable default
     const en = voices.find(v=>/en-GB|en-US|en-AU/i.test(v.lang)) || voices[0];
     if (en) voiceSel.value = en.name;
   }
@@ -150,7 +153,6 @@
     loadVoices();
     window.speechSynthesis.onvoiceschanged = loadVoices;
   }
-
   function speak(text){
     if (!speakReplies.checked) return;
     if (!('speechSynthesis' in window)) return;
@@ -162,41 +164,31 @@
     speechSynthesis.speak(u);
   }
 
-  // ------- STT (Web Speech API) -------
+  // ------- STT -------
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   let rec = null, listening = false, interim = '';
-
   if (SR) {
     rec = new SR();
-    rec.lang = 'en-US';     // change if you need Arabic etc.
+    rec.lang = 'en-US';
     rec.interimResults = true;
     rec.continuous = false;
-
     rec.onstart = () => { listening = true; mic.classList.add('on'); micLabel.textContent = 'Listening…'; };
-    rec.onend   = () => {
-      mic.classList.remove('on'); listening = false; micLabel.textContent = 'Mic';
-      if (t.value.trim()) send();
-    };
+    rec.onend   = () => { mic.classList.remove('on'); listening = false; micLabel.textContent = 'Mic'; if (t.value.trim()) send(); };
     rec.onerror = (e) => { mic.classList.remove('on'); listening = false; showError('Mic error: ' + e.error); };
-
     rec.onresult = (ev) => {
-      let finalText = '';
-      interim = '';
+      let finalText = ''; interim = '';
       for (const r of ev.results) {
         if (r.isFinal) finalText += r[0].transcript;
         else interim += r[0].transcript;
       }
-      // show interim in the textarea while you talk
       t.value = (finalText || interim).trim();
     };
   } else {
     micHint.textContent = '— not supported in this browser';
   }
-
   mic.onclick = () => {
     if (!rec){ alert('Speech recognition is not supported in this browser. Use Chrome/Edge.'); return; }
     showError('');
-    if (!listening){ try { rec.start(); } catch {} }
-    else { try { rec.stop(); } catch {} }
+    if (!listening){ try { rec.start(); } catch {} } else { try { rec.stop(); } catch {} }
   };
 </script>
