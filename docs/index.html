@@ -156,7 +156,6 @@
     async function sendChat(){
       clearError();
       const text = inputEl.value.trim(); if(!text) return; inputEl.value='';
-      // Image request
       if(imgMode.checked){
         imgOut.classList.remove('hide'); imgOut.textContent = 'Generating…';
         try{
