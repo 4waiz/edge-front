@@ -1,51 +1,96 @@
 <!doctype html>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>EDGE Chat</title>
-<link rel="icon" href="/logo.png">
+<link rel="icon" href="/logo.png" />
 <style>
-  :root{--bg:#0b0b0e;--panel:#15161a;--muted:#9aa0a6;--text:#e6e9ef;--accent:#f97316;--border:#2a2f36}
-  *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--text);font:16px/1.5 system-ui,Segoe UI,Roboto}
-  .wrap{max-width:940px;margin:auto;padding:24px}
-  .card{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:20px;min-height:70vh;display:grid;grid-template-rows:auto 1fr auto;gap:14px}
-  .head{display:flex;align-items:center;gap:12px}
-  .head img{height:42px}
-  .log{background:#0e1013;border:1px solid var(--border);border-radius:12px;padding:12px;overflow:auto}
-  .msg{max-width:76%;padding:10px 12px;border-radius:10px;margin:8px 0;white-space:pre-wrap}
-  .u{background:#24303a;margin-left:auto}
-  .a{background:#1b2430}
-  .row{display:grid;grid-template-columns:1fr auto;gap:10px}
-  textarea{background:#0e1013;color:var(--text);border:1px solid var(--border);border-radius:12px;padding:10px;resize:none}
-  button{background:var(--accent);color:#fff;border:0;border-radius:10px;padding:0 18px;font-weight:700;cursor:pointer;height:42px}
-  .muted{color:var(--muted);font-size:12px;text-align:center}
+  :root { --bg:#0b0b0e; --panel:#15161a; --muted:#9aa0a6; --text:#e6e9ef; --accent:#f97316; --border:#2a2f36; --input:#0e1013 }
+  *{ box-sizing:border-box }
+  body{ margin:0; background:var(--bg); color:var(--text); font:16px/1.5 system-ui,Segoe UI,Roboto }
+  .wrap{ max-width:980px; margin:28px auto; padding:0 16px }
+  .card{ background:var(--panel); border:1px solid var(--border); border-radius:14px; padding:20px; display:grid; gap:14px }
+  .head{ display:flex; justify-content:center; align-items:center; padding:6px 0 4px }
+  .head img{ height:54px }
+  .log{ background:var(--input); border:1px solid var(--border); border-radius:12px; padding:12px; height:52vh; overflow:auto }
+  .msg{ max-width:78%; padding:10px 12px; border-radius:10px; margin:8px 0; white-space:pre-wrap }
+  .u{ margin-left:auto; background:#24303a }
+  .a{ background:#1b2430 }
+  .err{ background:#3b1d1d; color:#f3caca; border:1px solid #7a2e2e; border-radius:8px; padding:8px 10px; display:none }
+  .row{ display:grid; grid-template-columns:1fr auto; gap:10px }
+  textarea{ background:var(--input); color:var(--text); border:1px solid var(--border); border-radius:12px; padding:10px; resize:none; height:80px }
+  button{ background:var(--accent); color:#fff; border:0; border-radius:12px; padding:0 18px; font-weight:800; cursor:pointer; height:80px }
+  .muted{ color:var(--muted); font-size:12px; text-align:center }
 </style>
+
 <div class="wrap">
   <div class="card">
-    <div class="head"><img src="/logo.png" alt="EDGE"><h2>EDGE Chat</h2></div>
+    <div class="head"><img src="/logo.png" alt="EDGE" /></div>
+
     <div id="log" class="log"></div>
+    <div id="error" class="err"></div>
+
     <div class="row">
-      <textarea id="t" rows="3" placeholder="Type a message…"></textarea>
+      <textarea id="t" placeholder="Type a message…"></textarea>
       <button id="send">Send</button>
     </div>
+
     <div class="muted">Powered by Hugging Face via Vercel Functions</div>
   </div>
 </div>
+
 <script>
-const log = document.getElementById('log'), t = document.getElementById('t'), btn = document.getElementById('send');
-const hist = [];
-function push(role, text){
-  const d=document.createElement('div'); d.className='msg '+(role==='user'?'u':'a'); d.textContent=text; log.appendChild(d); log.scrollTop=log.scrollHeight;
-}
-async function send(){
-  const text=t.value.trim(); if(!text) return; t.value='';
-  hist.push({role:'user',content:text}); push('user', text);
-  btn.disabled=true; btn.textContent='…';
-  try{
-    const r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:hist})});
-    const d=await r.json(); const reply=d.reply||'[no reply]';
-    hist.push({role:'assistant',content:reply}); push('assistant', reply);
-  }catch(e){ push('assistant', 'Error: '+e); }
-  btn.disabled=false; btn.textContent='Send'; t.focus();
-}
-btn.onclick=send; t.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send();}});
+  const log = document.getElementById('log');
+  const t   = document.getElementById('t');
+  const btn = document.getElementById('send');
+  const err = document.getElementById('error');
+  const hist = [];
+
+  function push(role, text) {
+    const d = document.createElement('div');
+    d.className = 'msg ' + (role === 'user' ? 'u' : 'a');
+    d.textContent = text;
+    log.appendChild(d);
+    log.scrollTop = log.scrollHeight;
+  }
+  function showError(msg){
+    err.textContent = msg;
+    err.style.display = msg ? 'block' : 'none';
+  }
+
+  async function send() {
+    showError('');
+    const text = t.value.trim();
+    if (!text) return;
+    t.value = '';
+    hist.push({ role: 'user', content: text });
+    push('user', text);
+    btn.disabled = true; btn.textContent = '…';
+
+    try {
+      const r = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: hist })
+      });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok || d.error) {
+        push('assistant', '[error]');
+        showError((d.error || `HTTP ${r.status}`) + (d.detail ? ` — ${typeof d.detail === 'string' ? d.detail : JSON.stringify(d.detail).slice(0,200)}` : ''));
+      } else {
+        const reply = d.reply || '[no reply]';
+        hist.push({ role: 'assistant', content: reply });
+        push('assistant', reply);
+      }
+    } catch (e) {
+      push('assistant', '[error]');
+      showError(String(e));
+    } finally {
+      btn.disabled = false; btn.textContent = 'Send'; t.focus();
+    }
+  }
+
+  btn.onclick = send;
+  t.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
+  });
 </script>
