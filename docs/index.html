@@ -1,4 +1,3 @@
-
 <!doctype html>
 <html lang="en">
 <head>
@@ -29,12 +28,10 @@
     .user{justify-self:end;background:#24303a}
     .assistant{justify-self:start;background:#1b2430}
     textarea{width:100%;background:var(--input);color:var(--text);border:1px solid var(--border);border-radius:12px;padding:12px 14px;font-family:'Montserrat',system-ui,Segoe UI,Roboto,sans-serif;resize:none}
-    .tiny{font-size:12px;color:var(--muted);text-align:center}
     .error{background:#3b1d1d;border:1px solid #7a2e2e;color:#f3caca;padding:10px 12px;border-radius:8px}
     .spinner{width:18px;height:18px;border:3px solid rgba(255,255,255,.35);border-top-color:white;border-radius:50%;display:inline-block;animation:spin 1s linear infinite;vertical-align:middle}
     @keyframes spin{to{transform:rotate(360deg)}}
     .footer{margin-top:6px;text-align:center;color:var(--muted);font-size:12px}
-    .kbd{border:1px solid var(--border);border-bottom-width:3px;border-radius:6px;padding:0 6px;background:var(--input);font-weight:700}
   </style>
 </head>
 <body>
@@ -55,29 +52,27 @@
           <div id="log" class="box"></div>
           <div id="err" class="error" style="display:none"></div>
           <div class="row">
-            <textarea id="input" rows="3" placeholder="Type a message…  (press "></textarea>
+            <textarea id="input" rows="3" placeholder="Type a message…"></textarea>
             <button id="send" class="btn primary">Send</button>
           </div>
         </div>
         <div class="footer" id="foot">—</div>
       </section>
 
-      <!-- Voice (placeholder; stubs implemented server-side) -->
+      <!-- Voice (placeholder) -->
       <section id="secVoice" class="section">
-        <div class="box">Voice mode is a preview and uses simple stubs in the backend right now. You can customize /transcribe and /speak later.</div>
-        <div class="footer">Tip: You can style or remove this tab if you don't need voice.</div>
+        <div class="box">Voice mode is a preview and uses simple backend stubs. Wire it to Whisper/TTS when ready.</div>
+        <div class="footer">Tip: remove this tab if you don't need voice.</div>
       </section>
     </div>
   </div>
 
   <script>
-    // Use the same origin as the Space — avoids hardcoding your subdomain.
     const API_BASE = location.origin;
     const $ = s => document.querySelector(s);
     const secChat = $('#secChat'), secVoice = $('#secVoice'), tabChat = $('#tabChat'), tabVoice = $('#tabVoice');
     const dot = $('#dot'), label = $('#label'), log = $('#log'), input = $('#input'), send = $('#send'), err = $('#err'), foot = $('#foot');
 
-    // Tab toggles
     function show(which){
       secChat.classList.remove('show'); secVoice.classList.remove('show');
       if(which === 'chat'){ secChat.classList.add('show'); tabChat.classList.add('primary'); tabVoice.classList.remove('primary'); }
@@ -86,7 +81,6 @@
     tabChat.onclick = () => show('chat');
     tabVoice.onclick = () => show('voice');
 
-    // Small helper
     function push(role, text){
       const div = document.createElement('div');
       div.className = `msg ${role}`;
@@ -111,7 +105,6 @@
       return JSON.parse(text);
     }
 
-    // Init
     (async () => {
       try {
         const h = await getJSON(`${API_BASE}/health`);
@@ -123,9 +116,6 @@
         dot.style.background = 'var(--err)';
         label.textContent = 'Backend offline';
       }
-      // UX: show keyboard hint
-      const ph = input.getAttribute('placeholder');
-      input.setAttribute('placeholder', ph + 'Enter to send, Shift+Enter for newline)');
     })();
 
     const history = [];
@@ -137,7 +127,6 @@
       history.push({role:'user', content:text});
       push('user', text);
 
-      // Loading state
       send.disabled = true;
       const old = send.textContent;
       send.innerHTML = '<span class="spinner"></span> Sending';
