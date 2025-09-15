@@ -4,35 +4,56 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>EDGE AI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;800&display=swap" rel="stylesheet">
   <style>
-    :root { --bg:#0b0c10; --panel:#111317; --muted:#94a3b8; --text:#e5e7eb; --accent:#22c55e; --accent2:#3b82f6; --red:#ef4444 }
-    *{ box-sizing:border-box } body{ margin:0; font-family: ui-sans-serif, system-ui; background:var(--bg); color:var(--text) }
+    :root {
+      --bg:#0a0a0a;
+      --panel:#1a1a1a;
+      --muted:#9e9e9e;
+      --text:#f5f5f5;
+      --accent:#f26722;
+      --accent2:#333333;
+      --red:#e53935;
+      --input-bg: #0f0f0f;
+      --border: #333333;
+    }
+    *{ box-sizing:border-box }
+    body{ margin:0; font-family: 'Montserrat', ui-sans-serif, system-ui; background:var(--bg); color:var(--text) }
     .wrap{ min-height:100vh; display:grid; place-items:center; padding:24px }
-    .card{ width:min(960px,100%); background:var(--panel); border:1px solid #1f2937; border-radius:16px; padding:24px; box-shadow:0 20px 60px rgba(0,0,0,.35) }
-    .title{ text-align:center; font-weight:800; font-size:clamp(24px,4vw,40px); margin:6px 0 }
-    .subtitle{ text-align:center; color:var(--muted); margin:0 0 22px }
+    .card{ width:min(960px,100%); background:var(--panel); border:1px solid var(--border); border-radius:8px; padding:32px; box-shadow:0 20px 60px rgba(0,0,0,.55) }
+    .logo{ display:block; max-width:240px; margin: 0 auto 20px; }
+    .title{ text-align:center; font-weight:800; font-size:clamp(28px,4vw,40px); margin:12px 0 6px; text-transform:uppercase; letter-spacing:1px }
+    .subtitle{ text-align:center; color:var(--muted); margin:0 0 28px }
     .modes{ display:flex; gap:12px; justify-content:center; margin:8px 0 12px }
-    .btn{ border:0; padding:14px 18px; border-radius:14px; font-weight:800; cursor:pointer }
-    .primary{ background:var(--accent); color:#062010 } .secondary{ background:var(--accent2); color:#041224 } .danger{ background:var(--red); color:#2c0101 }
+    .btn{ border:0; padding:14px 24px; border-radius:4px; font-weight:700; cursor:pointer; text-transform:uppercase; letter-spacing:0.5px; transition: opacity .2s }
+    .btn:hover{ opacity:0.9 }
+    .primary{ background:var(--accent); color:#ffffff } .secondary{ background:var(--accent2); color:var(--text) } .danger{ background:var(--red); color:#ffffff }
     .hide{ display:none } .grid{ display:grid; gap:14px }
     #statusRow{ display:flex; align-items:center; justify-content:center; gap:10px; font-size:12px; color:var(--muted) }
     #statusDot{ width:10px; height:10px; border-radius:50%; background:#999; }
     .chatbox{ display:grid; grid-template-rows:1fr auto; gap:10px; height:60vh }
-    .msgs{ overflow:auto; border-radius:12px; background:#0f1218; padding:12px; display:grid; gap:10px }
-    .msg{ padding:10px 12px; border-radius:12px; line-height:1.4; white-space:pre-wrap }
-    .user{ background:#1f2937; justify-self:end } .assistant{ background:#0b4c5f }
+    .msgs{ overflow:auto; border-radius:4px; background:var(--input-bg); border:1px solid var(--border); padding:12px; display:grid; gap:10px }
+    .msg{ padding:10px 14px; border-radius:4px; line-height:1.5; white-space:pre-wrap }
+    .user{ background:#2a2a2a; justify-self:end } .assistant{ background: #1c2b33; }
     .row{ display:grid; grid-template-columns: 1fr auto; gap:8px }
-    textarea{ width:100%; background:#0f1218; color:var(--text); border:1px solid #1f2937; border-radius:12px; padding:12px }
+    textarea{ width:100%; background:var(--input-bg); color:var(--text); border:1px solid var(--border); border-radius:4px; padding:12px; font-family: 'Montserrat', sans-serif; resize: none; }
     .tiny{ font-size:12px; color:var(--muted); text-align:center }
-    .pill{ border-radius:999px; padding:12px 16px; background:#0f1218; border:1px solid #1f2937; text-align:center }
-    .error{ background:#052a2a; border:1px solid #0d4040; color:#c0f2f2; padding:12px; border-radius:12px }
+    .toggle{ display:flex; align-items:center; gap:8px; justify-content:center; color:var(--muted); }
+    .img-out{ display:grid; place-items:center; padding:12px; background:var(--input-bg); border:1px solid var(--border); border-radius:4px }
+    .img-out img{ max-width:100%; border-radius:4px }
+    .pill{ border-radius:4px; padding:12px 16px; background:var(--input-bg); border:1px solid var(--border); text-align:center }
+    .error{ background:#4d1a1a; border:1px solid #8c2a2a; color:#f5c5c5; padding:12px; border-radius:4px }
+    .disabled{ opacity:.5; filter:grayscale(1); pointer-events:none }
   </style>
 </head>
 <body>
   <div class="wrap">
     <div class="card grid">
+      <img src="logo.png" alt="EDGE Learning & Innovation Factory Logo" class="logo" />
       <div>
-        <div class="title">Welcome to EDGE AI</div>
+        <div class="title">EDGE AI</div>
         <div class="subtitle">Choose a mode to get started</div>
       </div>
 
@@ -48,18 +69,20 @@
 
       <!-- Chat -->
       <section id="chatSec" class="grid hide">
+        <label class="toggle"><input type="checkbox" id="imgMode" /> <span id="imgLabel">🖼️ Image mode</span></label>
         <div class="chatbox">
           <div id="msgs" class="msgs"></div>
           <div id="errBox" class="error hide"></div>
           <div class="row">
-            <textarea id="input" rows="3" placeholder="Type a message..."></textarea>
+            <textarea id="input" rows="3" placeholder="Type a message or image prompt..."></textarea>
             <button id="send" class="btn primary">Send</button>
           </div>
         </div>
+        <div id="imgOut" class="img-out hide"></div>
         <div class="tiny" id="footerInfo">—</div>
       </section>
 
-      <!-- Voice (UI kept; backend returns 501 so it's a harmless stub) -->
+      <!-- Voice -->
       <section id="voiceSec" class="grid hide">
         <div class="pill" id="status">Tap start to record…</div>
         <div class="modes" style="margin:0 auto">
@@ -83,7 +106,8 @@
     const btnChat = $('btnChat'), btnVoice = $('btnVoice');
     const statusDot = $('statusDot'), modelLabel = $('modelLabel');
     const msgsEl = $('msgs'), inputEl = $('input'), sendBtn = $('send');
-    const errBox = $('errBox'), footerInfo = $('footerInfo');
+    const imgMode = $('imgMode'), imgOut = $('imgOut'), errBox = $('errBox'), imgLabel = $('imgLabel');
+    const footerInfo = $('footerInfo');
     const startRec = $('startRec'), stopRec = $('stopRec'), statusEl = $('status'), audioEl = $('audio');
 
     function show(sec){ chatSec.classList.add('hide'); voiceSec.classList.add('hide'); sec.classList.remove('hide'); }
@@ -108,6 +132,7 @@
       } finally { clearTimeout(t); }
     }
 
+    // Ping backend + configure UI
     (async () => {
       try {
         const h = await fetch(`${API_BASE}/health`, { cache: 'no-store' });
@@ -115,10 +140,17 @@
         const cfg = await fetch(`${API_BASE}/config`).then(r=>r.json()).catch(()=>({}));
         const textInfo = (cfg.backend === 'local'
           ? `Chat: Local (${cfg.text_model})`
-          : `Chat: HF (${cfg.text_model})`);
+          : `Chat: HF (${cfg.text_model})`) + ` • Images: ${cfg.image_model}`;
         modelLabel.textContent = textInfo;
         footerInfo.textContent = textInfo + (cfg.hf_token ? ' • HF token ✓' : ' • no HF token');
-        show(chatSec); // default
+        // Disable Image mode if no token
+        if(!cfg.hf_token){
+          imgMode.checked = false; imgMode.disabled = true;
+          imgLabel.textContent = '🖼️ Image mode (token required)';
+          imgLabel.title = 'Set HF_TOKEN in backend to enable';
+        }
+        // Show chat by default
+        show(chatSec);
       } catch {
         statusDot.style.background = '#ef4444';
         modelLabel.textContent = 'Backend offline';
@@ -128,6 +160,17 @@
     async function sendChat(){
       clearError();
       const text = inputEl.value.trim(); if(!text) return; inputEl.value='';
+      // Image request
+      if(imgMode.checked){
+        imgOut.classList.remove('hide'); imgOut.textContent = 'Generating…';
+        try{
+          const data = await postJSON(`${API_BASE}/image`, { prompt: text }, 120000);
+          if(data.image_b64) imgOut.innerHTML = `<img alt="generated" src="data:image/png;base64,${data.image_b64}"/>`;
+          else imgOut.textContent = 'Image error: ' + (data.error || 'unknown');
+        }catch(e){ imgOut.textContent = 'Image error: ' + (e.message || 'failed'); }
+        return;
+      }
+      // Text chat
       push('user', text); sendBtn.disabled = true;
       try{
         const data = await postJSON(`${API_BASE}/chat`, { messages }, 90000);
@@ -140,7 +183,7 @@
     sendBtn.onclick = sendChat;
     inputEl.addEventListener('keydown', e => { if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); sendChat(); } });
 
-    // Voice — stubbed STT/TTS (backend returns 501)
+    // Voice — stubbed STT (kept from previous version)
     let mediaRecorder, chunks = [];
     startRec.onclick = async ()=>{
       try{
@@ -165,7 +208,7 @@
         $('voiceReply').textContent = data.reply || '';
         const speak = await fetch(`${API_BASE}/speak`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ text: data.reply || '' }) });
         const audioBlob = await speak.blob(); audioEl.src = URL.createObjectURL(audioBlob); audioEl.classList.remove('hide'); await audioEl.play();
-        statusEl.textContent='Done (TTS may be disabled)';
+        statusEl.textContent='Done';
       }catch(e){ console.error('Voice flow error:', e); statusEl.textContent='Error: ' + (e.message || 'failed'); }
     }
   </script>
