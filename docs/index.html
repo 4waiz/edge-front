@@ -1,3 +1,4 @@
+
 <!doctype html>
 <html lang="en">
 <head>
@@ -6,61 +7,163 @@
   <title>EDGE AI</title>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;800&display=swap" rel="stylesheet">
   <style>
-    :root{--bg:#0a0a0a;--panel:#1a1a1a;--muted:#9e9e9e;--text:#f5f5f5;--accent:#f26722;--accent2:#333333;--red:#e53935;--input-bg:#0f0f0f;--border:#333333}
-    *{box-sizing:border-box}body{margin:0;font-family:'Montserrat',sans-serif;background:var(--bg);color:var(--text)}.wrap{min-height:100vh;display:grid;place-items:center;padding:24px}.card{width:min(960px,100%);background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:32px;box-shadow:0 20px 60px rgba(0,0,0,.55)}.logo{display:block;max-width:240px;margin:0 auto 20px}.subtitle{text-align:center;color:var(--muted);margin:0 0 28px}.modes{display:flex;gap:12px;justify-content:center;margin:8px 0 12px}.btn{border:0;padding:14px 24px;border-radius:4px;font-weight:700;cursor:pointer;text-transform:uppercase;letter-spacing:.5px;transition:opacity .2s}.btn:hover{opacity:.9}.primary{background:var(--accent);color:#fff}.secondary{background:var(--accent2);color:var(--text)}.danger{background:var(--red);color:#fff}.hide{display:none}.grid{display:grid;gap:14px}#statusRow{display:flex;align-items:center;justify-content:center;gap:10px;font-size:12px;color:var(--muted)}#statusDot{width:10px;height:10px;border-radius:50%;background:#999}.chatbox{display:grid;grid-template-rows:1fr auto;gap:10px;height:60vh}.msgs{overflow:auto;border-radius:4px;background:var(--input-bg);border:1px solid var(--border);padding:12px;display:grid;gap:10px}.msg{padding:10px 14px;border-radius:4px;line-height:1.5;white-space:pre-wrap}.user{background:#2a2a2a;justify-self:end}.assistant{background:#1c2b33}.row{display:grid;grid-template-columns:1fr auto;gap:8px}textarea{width:100%;background:var(--input-bg);color:var(--text);border:1px solid var(--border);border-radius:4px;padding:12px;font-family:'Montserrat',sans-serif;resize:none}.tiny{font-size:12px;color:var(--muted);text-align:center}.pill{border-radius:4px;padding:12px 16px;background:var(--input-bg);border:1px solid var(--border);text-align:center}.error{background:#4d1a1a;border:1px solid #8c2a2a;color:#f5c5c5;padding:12px;border-radius:4px}
+    :root{--bg:#0b0b0e;--panel:#15161a;--muted:#9aa0a6;--text:#e6e9ef;--accent:#f97316;--accent-2:#2b2f36;--ok:#22c55e;--err:#ef4444;--border:#2a2f36;--input:#0e1013}
+    *{box-sizing:border-box}
+    body{margin:0;font-family:'Montserrat',system-ui,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--text)}
+    .wrap{min-height:100vh;display:grid;place-items:center;padding:24px}
+    .card{width:min(980px,100%);background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:28px 28px 22px;box-shadow:0 30px 80px rgba(0,0,0,.45)}
+    .logo{display:block;max-width:240px;margin:0 auto 10px;filter:drop-shadow(0 8px 24px rgba(0,0,0,.35))}
+    .subtitle{text-align:center;color:var(--muted);margin:8px 0 18px}
+    .tabs{display:flex;gap:10px;justify-content:center;margin:0 0 12px}
+    .btn{border:0;padding:12px 18px;border-radius:999px;font-weight:800;cursor:pointer;letter-spacing:.3px;transition:transform .07s ease,opacity .15s}
+    .btn:active{transform:translateY(1px)} .btn[disabled]{opacity:.6;cursor:not-allowed}
+    .primary{background:var(--accent);color:white}
+    .secondary{background:var(--accent-2);color:var(--text)}
+    .row{display:grid;grid-template-columns:1fr auto;gap:10px}
+    .status{display:flex;align-items:center;justify-content:center;gap:10px;font-size:12px;color:var(--muted);margin:4px 0 8px}
+    .dot{width:10px;height:10px;border-radius:50%;background:#999}
+    .section{display:none} .section.show{display:grid}
+    .chat{grid-template-rows:1fr auto;gap:10px;height:60vh}
+    .box{overflow:auto;border-radius:12px;background:var(--input);border:1px solid var(--border);padding:12px;display:grid;gap:12px}
+    .msg{padding:10px 14px;border-radius:10px;line-height:1.55;white-space:pre-wrap;max-width:78%}
+    .user{justify-self:end;background:#24303a}
+    .assistant{justify-self:start;background:#1b2430}
+    textarea{width:100%;background:var(--input);color:var(--text);border:1px solid var(--border);border-radius:12px;padding:12px 14px;font-family:'Montserrat',system-ui,Segoe UI,Roboto,sans-serif;resize:none}
+    .tiny{font-size:12px;color:var(--muted);text-align:center}
+    .error{background:#3b1d1d;border:1px solid #7a2e2e;color:#f3caca;padding:10px 12px;border-radius:8px}
+    .spinner{width:18px;height:18px;border:3px solid rgba(255,255,255,.35);border-top-color:white;border-radius:50%;display:inline-block;animation:spin 1s linear infinite;vertical-align:middle}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .footer{margin-top:6px;text-align:center;color:var(--muted);font-size:12px}
+    .kbd{border:1px solid var(--border);border-bottom-width:3px;border-radius:6px;padding:0 6px;background:var(--input);font-weight:700}
   </style>
 </head>
 <body>
   <div class="wrap">
-    <div class="card grid">
-      <img src="logo.png" alt="EDGE Learning & Innovation Factory Logo" class="logo" />
-      <div class="subtitle">Choose a mode to get started</div>
-      <div class="modes">
-        <button id="btnChat" class="btn primary">💬 Chat</button>
-        <button id="btnVoice" class="btn secondary">🎙️ Voice</button>
+    <div class="card">
+      <img src="logo.png" class="logo" alt="EDGE LIF Logo" />
+      <div class="subtitle">Pick a mode</div>
+      <div class="tabs">
+        <button id="tabChat" class="btn primary">💬 Chat</button>
+        <button id="tabVoice" class="btn secondary">🎙️ Voice</button>
       </div>
-      <div id="statusRow">
-        <div id="statusDot" title="Backend connectivity"></div>
-        <span id="modelLabel">Checking backend…</span>
-      </div>
-      <section id="chatSec" class="grid hide">
-        <div class="chatbox">
-          <div id="msgs" class="msgs"></div>
-          <div id="errBox" class="error hide"></div>
+
+      <div class="status"><span id="dot" class="dot"></span><span id="label">Checking backend…</span></div>
+
+      <!-- Chat -->
+      <section id="secChat" class="section show">
+        <div class="chat">
+          <div id="log" class="box"></div>
+          <div id="err" class="error" style="display:none"></div>
           <div class="row">
-            <textarea id="input" rows="3" placeholder="Type a message..."></textarea>
+            <textarea id="input" rows="3" placeholder="Type a message…  (press "></textarea>
             <button id="send" class="btn primary">Send</button>
           </div>
         </div>
-        <div class="tiny" id="footerInfo">—</div>
+        <div class="footer" id="foot">—</div>
       </section>
-      <!-- Voice -->
-      <section id="voiceSec" class="grid hide">
-        <div class="pill" id="status">Tap start to record…</div>
-        <div class="modes" style="margin:0 auto"><button id="startRec" class="btn secondary">Start</button><button id="stopRec" class="btn danger" disabled>Stop & Ask</button></div>
-        <div class="grid">
-          <div class="pill"><strong>Transcript:</strong> <span id="transcript">—</span></div>
-          <div class="pill"><strong>Assistant:</strong> <span id="voiceReply">—</span></div>
-          <audio id="audio" controls class="hide"></audio>
-        </div>
+
+      <!-- Voice (placeholder; stubs implemented server-side) -->
+      <section id="secVoice" class="section">
+        <div class="box">Voice mode is a preview and uses simple stubs in the backend right now. You can customize /transcribe and /speak later.</div>
+        <div class="footer">Tip: You can style or remove this tab if you don't need voice.</div>
       </section>
     </div>
   </div>
+
   <script>
-    const API_BASE = "https://4waiz-edge-v2.hf.space";
-    const $ = id => document.getElementById(id);
-    const chatSec=$('chatSec'),voiceSec=$('voiceSec'),btnChat=$('btnChat'),btnVoice=$('btnVoice'),statusDot=$('statusDot'),modelLabel=$('modelLabel'),msgsEl=$('msgs'),inputEl=$('input'),sendBtn=$('send'),errBox=$('errBox'),footerInfo=$('footerInfo'),startRec=$('startRec'),stopRec=$('stopRec'),statusEl=$('status'),audioEl=$('audio');
-    function show(sec){chatSec.classList.add('hide');voiceSec.classList.add('hide');sec.classList.remove('hide')}
-    btnChat.onclick=()=>show(chatSec);btnVoice.onclick=()=>show(voiceSec);
-    let messages=[];
-    function push(role,content){messages.push({role,content});const d=document.createElement('div');d.className=`msg ${role}`;d.textContent=content;msgsEl.appendChild(d);msgsEl.scrollTop=msgsEl.scrollHeight}
-    function setError(msg){errBox.textContent=msg;errBox.classList.remove('hide')}
-    async function postJSON(url,payload,timeoutMs=6e4){const t=new AbortController;setTimeout(()=>t.abort(),timeoutMs);const s=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload),signal:t.signal});if(!s.ok){const e=await s.text().catch(()=>'');throw new Error(`HTTP ${s.status} ${s.statusText} – ${e.slice(0,200)}`)}return await s.json()}
-    (async()=>{try{const e=await fetch(`${API_BASE}/health`,{cache:'no-store'});statusDot.style.background=e.ok?'#22c55e':'#ef4444';const t=await fetch(`${API_BASE}/config`).then(e=>e.json()).catch(()=>({}));const s=`Chat: HF (${t.text_model})`;modelLabel.textContent=s;footerInfo.textContent=s+(t.hf_token?' • HF token ✓':' • no HF token');show(chatSec)}catch{statusDot.style.background='#ef4444';modelLabel.textContent='Backend offline'}})();
-    async function sendChat(){errBox.classList.add('hide');const t=inputEl.value.trim();if(!t)return;inputEl.value='';push('user',t);sendBtn.disabled=!0;try{const s=await postJSON(`${API_BASE}/chat`,{messages});push('assistant',s.reply||'[no reply]')}catch(s){console.error('Chat error:',s);setError('Error: '+(s.message||'request failed'))}finally{sendBtn.disabled=!1}}
-    sendBtn.onclick=sendChat;inputEl.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendChat()}});
-    let mediaRecorder,chunks=[];startRec.onclick=async()=>{try{const e=await navigator.mediaDevices.getUserMedia({audio:!0});mediaRecorder=new MediaRecorder(e);chunks=[];mediaRecorder.ondataavailable=e=>{e.data.size>0&&chunks.push(e.data)};mediaRecorder.onstop=onStop;mediaRecorder.start();startRec.disabled=!0;stopRec.disabled=!1;statusEl.textContent='Recording…'}catch(e){statusEl.textContent='Mic error: '+(e.message||'permission denied')}};stopRec.onclick=()=>{mediaRecorder&&mediaRecorder.state!=='inactive'&&mediaRecorder.stop();startRec.disabled=!1;stopRec.disabled=!0;statusEl.textContent='Processing…'};
-    async function onStop(){const e=new Blob(chunks,{type:'audio/webm'});const t=new FormData;t.append('file',e,'voice.webm');try{const s=await fetch(`${API_BASE}/transcribe`,{method:'POST',body:t}),{text:o}=await s.json().catch(()=>({text:''}));$('transcript').textContent=o||'(no transcript)';const a=o&&o.trim()?o:"Say a short hello.",c=await postJSON(`${API_BASE}/chat`,{messages:[{role:'user',content:a}]});$('voiceReply').textContent=c.reply||'';const n=await fetch(`${API_BASE}/speak`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:c.reply||''})}),i=await n.blob();audioEl.src=URL.createObjectURL(i);audioEl.classList.remove('hide');await audioEl.play();statusEl.textContent='Done'}catch(s){console.error('Voice flow error:',s);statusEl.textContent='Error: '+(s.message||'failed')}}
+    // Use the same origin as the Space — avoids hardcoding your subdomain.
+    const API_BASE = location.origin;
+    const $ = s => document.querySelector(s);
+    const secChat = $('#secChat'), secVoice = $('#secVoice'), tabChat = $('#tabChat'), tabVoice = $('#tabVoice');
+    const dot = $('#dot'), label = $('#label'), log = $('#log'), input = $('#input'), send = $('#send'), err = $('#err'), foot = $('#foot');
+
+    // Tab toggles
+    function show(which){
+      secChat.classList.remove('show'); secVoice.classList.remove('show');
+      if(which === 'chat'){ secChat.classList.add('show'); tabChat.classList.add('primary'); tabVoice.classList.remove('primary'); }
+      else { secVoice.classList.add('show'); tabVoice.classList.add('primary'); tabChat.classList.remove('primary'); }
+    }
+    tabChat.onclick = () => show('chat');
+    tabVoice.onclick = () => show('voice');
+
+    // Small helper
+    function push(role, text){
+      const div = document.createElement('div');
+      div.className = `msg ${role}`;
+      div.textContent = text;
+      log.appendChild(div);
+      log.scrollTop = log.scrollHeight;
+    }
+    function setError(msg){
+      err.textContent = msg;
+      err.style.display = msg ? 'block' : 'none';
+    }
+
+    async function getJSON(url){
+      const r = await fetch(url, {cache:'no-store'});
+      if(!r.ok) throw new Error(`HTTP ${r.status}`);
+      return await r.json();
+    }
+    async function postJSON(url, payload){
+      const r = await fetch(url, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
+      const text = await r.text();
+      if(!r.ok) throw new Error(`HTTP ${r.status} – ${text}`);
+      return JSON.parse(text);
+    }
+
+    // Init
+    (async () => {
+      try {
+        const h = await getJSON(`${API_BASE}/health`);
+        dot.style.background = h.ok ? 'var(--ok)' : 'var(--err)';
+        const cfg = await getJSON(`${API_BASE}/config`).catch(()=>({}));
+        label.textContent = `Chat: HF (${cfg.text_model || 'model'}) • ${cfg.hf_token ? 'token ✓' : 'token missing'}`;
+        foot.textContent = `Press Enter to send • Shift+Enter for newline`;
+      } catch(e){
+        dot.style.background = 'var(--err)';
+        label.textContent = 'Backend offline';
+      }
+      // UX: show keyboard hint
+      const ph = input.getAttribute('placeholder');
+      input.setAttribute('placeholder', ph + 'Enter to send, Shift+Enter for newline)');
+    })();
+
+    const history = [];
+    async function sendChat(){
+      setError('');
+      const text = input.value.trim();
+      if(!text) return;
+      input.value = '';
+      history.push({role:'user', content:text});
+      push('user', text);
+
+      // Loading state
+      send.disabled = true;
+      const old = send.textContent;
+      send.innerHTML = '<span class="spinner"></span> Sending';
+
+      try{
+        const res = await postJSON(`${API_BASE}/chat`, {messages: history});
+        const reply = res.reply || '[no reply]';
+        history.push({role:'assistant', content: reply});
+        push('assistant', reply);
+      }catch(errObj){
+        console.error(errObj);
+        setError(String(errObj.message || errObj));
+      }finally{
+        send.disabled = false;
+        send.textContent = old;
+        input.focus();
+      }
+    }
+
+    send.onclick = sendChat;
+    input.addEventListener('keydown', (ev) => {
+      if(ev.key === 'Enter' && !ev.shiftKey){
+        ev.preventDefault();
+        sendChat();
+      }
+    });
   </script>
 </body>
 </html>
