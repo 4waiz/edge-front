@@ -68,6 +68,93 @@
   .foot{margin-top:4px;text-align:center;color:var(--muted)}
   .foot a{color:var(--text); text-decoration:none; border-bottom:1px dotted var(--accent)}
   .foot a:hover{color:var(--accent)}
+  :root{
+    --bg:#0b0b0e;--panel:#15161a;--muted:#9aa0a6;--text:#e6e9ef;
+    --accent:#f97316;--accent-2:#2b2f36;--ok:#22c55e;--err:#ef4444;
+    --border:#2a2f36;--input:#0e1013
+  }
+
+  *{box-sizing:border-box}
+  html,body{
+    height:100%;
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    /* hide page scrollbar (one-page app) */
+    overflow:hidden;                 /* core */
+    -ms-overflow-style:none;         /* IE/Edge legacy */
+    scrollbar-width:none;            /* Firefox */
+  }
+  body::-webkit-scrollbar{display:none} /* Chrome/Safari */
+
+  /* Layout: fill the viewport, no external scroll */
+  .wrap{
+    height:100dvh;                   /* better on mobile, falls back to 100vh */
+    height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:16px;
+  }
+  .card{
+    width:min(1100px,100%);
+    height:100%;                     /* fill the viewport area */
+    display:flex;
+    flex-direction:column;
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:16px;
+    box-shadow:0 30px 80px rgba(0,0,0,.45);
+    min-height:0;                    /* allow inner areas to shrink */
+  }
+
+  /* header/logo row (if you have one) */
+  .logo{display:block;max-width:260px;margin:6px auto 2px;filter:drop-shadow(0 6px 20px rgba(0,0,0,.35))}
+
+  /* top controls row */
+  .controls{
+    display:flex;gap:12px;align-items:center;flex-wrap:wrap;
+    padding:6px 16px 8px; color:var(--muted);
+  }
+
+  /* Chat area uses ALL remaining space; only log scrolls */
+  .chat{
+    flex:1; min-height:0;                         /* critical: prevents overflow */
+    display:grid; grid-template-rows: 1fr auto;   /* [log] + [composer] */
+    gap:12px; padding:0 16px 16px;
+  }
+
+  /* Messages panel (internal scrolling only) */
+  #log{
+    min-height:0; height:auto; overflow:auto;     /* internal scroll */
+    border-radius:12px; background:var(--input); border:1px solid var(--border);
+    padding:12px; display:grid; gap:12px;
+  }
+
+  /* Pretty (dark) internal scrollbar for the log */
+  #log::-webkit-scrollbar{width:8px}
+  #log::-webkit-scrollbar-thumb{background:var(--border);border-radius:8px}
+  #log{scrollbar-width:thin; scrollbar-color:var(--border) transparent;}
+
+  /* Messages */
+  .msg{padding:10px 14px;border-radius:10px;line-height:1.55;white-space:pre-wrap;max-width:78%}
+  .user{justify-self:end;background:#24303a}
+  .assistant{justify-self:start;background:#1b2430}
+
+  /* Composer */
+  .row{display:grid;grid-template-columns:1fr auto;gap:10px}
+  textarea{
+    width:100%;background:var(--input);color:var(--text);
+    border:1px solid var(--border);border-radius:12px;padding:12px 14px;
+    font-family:system-ui,Segoe UI,Roboto,sans-serif;resize:none;min-height:72px
+  }
+  .btn{border:0;padding:12px 18px;border-radius:999px;font-weight:800;cursor:pointer;transition:transform .07s ease,opacity .15s}
+  .btn:active{transform:translateY(1px)} .btn[disabled]{opacity:.6;cursor:not-allowed}
+  .primary{background:var(--accent);color:white}
+  .secondary{background:var(--accent-2);color:var(--text)}
+
+  /* Footer */
+  .footer{margin:0 0 8px;text-align:center;color:var(--muted);font-size:12px}
 </style>
 
 <div class="wrap">
@@ -132,12 +219,13 @@
     return data;
   }
 
-  // Limit assistant replies to N words (hard cap)
+  // ======== 100-word cap
   function limitWords(s, n = 100) {
     const words = String(s || "").trim().split(/\s+/);
     return words.length > n ? words.slice(0, n).join(" ") + "…" : s;
   }
 
+  // ======== send flow (used by typing & by recognizer)
   async function send(){
     showError('');
     const text = t.value.trim();
@@ -150,14 +238,13 @@
     try{
       const res = await postJSON('/api/chat', {messages: history});
       const raw = res.reply || '[no reply]';
-      const reply = limitWords(raw, 100);        // <= hard cap to ~100 words
+      const reply = limitWords(raw, 100);        // <= hard cap
       history.push({role:'assistant', content: reply});
       push('assistant', reply);
-      speak(reply);   // will auto-resume listening after speech if loop mode is on
+      speak(reply);    // speaking keeps recognizer running; barge-in handled below
     }catch(e){
       push('assistant','[error]');
       showError(String(e.message || e));
-      autoListen(); // keep loop going
     }finally{
       sendBtn.disabled = false; sendBtn.textContent = old; t.focus();
     }
@@ -166,7 +253,7 @@
   t.addEventListener('keydown', (e)=>{ if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); send(); }});
   document.addEventListener('keydown', e => { if(e.key.toLowerCase()==='m') toggleMic(); });
 
-  // ======== TTS (single: Microsoft Emily Online/Neural)
+  // ======== TTS (single: Microsoft Emily Online/Neural if available)
   let voices = [];
   function loadVoices(){ voices = speechSynthesis.getVoices(); }
   if('speechSynthesis' in window){ loadVoices(); window.speechSynthesis.onvoiceschanged = loadVoices; }
@@ -183,57 +270,95 @@
   }
 
   let speaking = false;
+  let currentTTS = '';  // text currently being spoken (for echo filtering)
+
   function speak(text){
-    if(!speakReplies.checked || !('speechSynthesis' in window)) { autoListen(); return; }
+    if(!speakReplies.checked || !('speechSynthesis' in window)) { return; }
     const u = new SpeechSynthesisUtterance(text);
     const v = pickEmily(); if(v) u.voice = v;
     u.rate = parseFloat(rateInp.value) || 1.0;
-    u.onstart = ()=>{ speaking = true; };
-    u.onend   = ()=>{ speaking = false; autoListen(); };
-    u.onerror = ()=>{ speaking = false; autoListen(); };
-    speechSynthesis.cancel(); // barge-in safety
+    u.onstart = ()=>{ speaking = true; currentTTS = text; };
+    u.onend   = ()=>{ speaking = false; currentTTS = ''; };
+    u.onerror = ()=>{ speaking = false; currentTTS = ''; };
+    speechSynthesis.cancel();   // if anything else is queued
     speechSynthesis.speak(u);
   }
 
-  // ======== STT (Web Speech API) with interactive loop + barge-in
+  // ======== SR (continuous) with barge-in by speaking + echo filter
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  let rec = null, loopOn = false, listening = false, interim = '';
+  let rec = null, loopOn = false, listening = false;
+
+  // naive echo filter: ignore recognition that matches the TTS too closely
+  function normalize(s){ return String(s||'').toLowerCase().replace(/[^a-z0-9\s]/g,' ').replace(/\s+/g,' ').trim(); }
+  function isLikelyEcho(transcript, spoken){
+    if(!spoken) return false;
+    const a = normalize(transcript).split(' ');
+    const b = new Set(normalize(spoken).split(' '));
+    if(a.length < 4) return false;               // too short to judge
+    let match = 0; for(const w of a){ if(b.has(w)) match++; }
+    return (match / a.length) > 0.6;             // >60% overlap => probably echo
+  }
+
   if(SR){
     rec = new SR();
     rec.lang = 'en-GB';
     rec.interimResults = true;
-    rec.continuous = false;
+    rec.continuous = true;                       // <— keep the mic hot
+
+    let partial = '';
 
     rec.onstart = () => {
-      listening = true; mic.classList.add('on'); micLabel.textContent = 'Listening…';
-      if('speechSynthesis' in window) speechSynthesis.cancel(); // barge-in
+      listening = true; mic.classList.add('on'); micLabel.textContent = 'Voice On';
     };
+
     rec.onresult = (ev) => {
-      let finalText=''; interim='';
-      for(const r of ev.results){ if(r.isFinal) finalText+=r[0].transcript; else interim+=r[0].transcript; }
-      t.value = (finalText || interim).trim();
+      for(const r of ev.results){
+        const txt = r[0]?.transcript || '';
+        if(r.isFinal){
+          const finalText = (partial + ' ' + txt).trim();
+          partial = '';
+          if(!finalText) continue;
+
+          // If we're speaking AND this looks like our own TTS -> ignore
+          if(speaking && isLikelyEcho(finalText, currentTTS)) {
+            continue;
+          }
+
+          // If we're speaking but text is not echo, that's a barge-in: cancel TTS
+          if(speaking){ try{ speechSynthesis.cancel(); }catch{} speaking=false; currentTTS=''; }
+
+          // Treat as a user utterance
+          t.value = finalText;
+          send();
+        } else {
+          partial = (partial + ' ' + txt).trim();
+        }
+      }
     };
-    rec.onerror = (e)=>{ listening=false; mic.classList.remove('on'); showError('Mic error: '+e.error); if(loopOn) autoListen(); };
-    rec.onend   = ()=>{
-      listening = false; mic.classList.remove('on'); micLabel.textContent = loopOn ? 'Voice On' : 'Start Voice';
-      if(t.value.trim()) send(); else if(loopOn && !speaking) autoListen();
-    };
+
+    // keep it running
+    rec.onerror = () => { listening=false; mic.classList.remove('on'); if(loopOn) setTimeout(safeStart, 250); };
+    rec.onend   = () => { listening=false; mic.classList.remove('on'); if(loopOn) setTimeout(safeStart, 150); };
+
+    function safeStart(){
+      try{ rec.start(); }catch(_){}   // InvalidStateError if already started
+    }
+
+    function toggleMic(){
+      showError('');
+      loopOn = !loopOn;
+      if(loopOn){ safeStart(); }
+      else{
+        try{ rec.stop(); }catch(_){}
+        try{ speechSynthesis.cancel(); }catch(_){}
+        speaking=false; currentTTS='';
+        mic.classList.remove('on'); micLabel.textContent = 'Start Voice';
+      }
+    }
+    mic.onclick = toggleMic;
+    document.addEventListener('keydown', e => { if(e.key.toLowerCase()==='m') toggleMic(); });
   } else {
     document.querySelector('.hint').textContent = 'Voice needs Chrome/Edge (Web Speech API)';
+    mic.onclick = ()=>alert('Speech recognition not supported in this browser.');
   }
-
-  function autoListen(){
-    if(!loopOn || !rec) return;
-    if(speaking) return;
-    try{ rec.start(); }catch(e){}
-  }
-
-  function toggleMic(){
-    if(!rec){ alert('Speech recognition not supported in this browser. Try Chrome or Edge.'); return; }
-    showError('');
-    loopOn = !loopOn;
-    if(loopOn){ mic.classList.add('on'); micLabel.textContent = 'Voice On'; autoListen(); }
-    else{ mic.classList.remove('on'); micLabel.textContent = 'Start Voice'; try{rec.stop();}catch{} if('speechSynthesis' in window) speechSynthesis.cancel(); }
-  }
-  mic.onclick = toggleMic;
 </script>
