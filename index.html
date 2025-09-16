@@ -20,8 +20,8 @@
       overflow:hidden; /* page never scrolls */
     }
     .wrap{height:100%;display:grid;grid-template-rows:auto 1fr auto;gap:12px;padding:18px;  min-height:0;} 
-    .topbar{display:flex;align-items:center;gap:14px;justify-content:center}
-    .logo{height:80px;object-fit:contain;filter:drop-shadow(0 8px 24px rgba(0,0,0,.45))}
+    .topbar{display:flex;align-items:center;gap:14px;justify-content:center; flex-wrap: wrap}
+    .logo{height:80px;object-fit:contain;filter:drop-shadow(0 8px 24px rgba(0,0,0,.45)); order:-1; flex:0 0 100%; display:block; margin:0 auto 6px;}
     .pill{display:inline-flex;align-items:center;gap:10px;padding:12px 18px;border-radius:999px;background:var(--accent);color:#fff;font-weight:800;cursor:pointer;box-shadow:0 10px 30px rgba(0,0,0,.35)}
     .pill.secondary{background:var(--accent-2);color:var(--text);border:1px solid var(--border)}
     .pill[disabled]{opacity:.6;cursor:not-allowed}
@@ -40,7 +40,8 @@
     }
     .sysline{color:#c4cad4;background:#0e1116;border:1px dashed #283140;border-radius:12px;padding:12px 16px}
     .scroll{
-      overflow-y:auto;           /* was overflow:auto — fine too */
+      overflow-y:auto;
+      max-height: clamp(240px, 50vh, 640px);          /* was overflow:auto — fine too */
       min-height:0;              /* NEW */
       -webkit-overflow-scrolling:touch;  /* optional */
       overscroll-behavior:contain;       /* optional */
