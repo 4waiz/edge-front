@@ -85,128 +85,262 @@
     #log::-webkit-scrollbar{ width:10px }
     #log::-webkit-scrollbar-thumb{ background:#38414a; border-radius:10px }
     #log::-webkit-scrollbar-track{ background:transparent }
+    
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;background:radial-gradient(1200px 1200px at 50% -20%, #151821 0%, #0b0c10 50%, #000 100%);
+      color:var(--text); font-family:'Montserrat',system-ui,Segoe UI,Roboto,sans-serif;
+      overflow:hidden;  /* page never scrolls */
+    }
+    .wrap{height:100%;display:grid;grid-template-rows:auto 1fr auto;gap:12px;padding:18px}
+    .topbar{display:flex;align-items:center;gap:14px;justify-content:center}
+    .logo{height:56px;object-fit:contain;filter:drop-shadow(0 8px 24px rgba(0,0,0,.45))}
+    .pill{display:inline-flex;align-items:center;gap:10px;padding:12px 18px;border-radius:999px;background:var(--accent);color:#fff;font-weight:800;cursor:pointer;box-shadow:0 10px 30px rgba(0,0,0,.35)}
+    .pill.secondary{background:var(--accent-2);color:var(--text);border:1px solid var(--border)}
+    .pill[disabled]{opacity:.6;cursor:not-allowed}
+    .status{padding:10px 16px;border-radius:999px;background:var(--accent-2);border:1px solid var(--border);color:#c7d1db}
+    .status.idle{background:#1a212a}
+    .status.listen{background:#0f2c1a;border-color:#1b4d2e;color:#cfeedd}
+    .status.speak{background:#2b1a1a;border-color:#5b2a2a;color:#ffd8d8}
+    .rate{display:flex;align-items:center;gap:10px}
+    input[type=range]{accent-color:var(--accent)}
+    .hint{color:var(--muted);background:#0e1217;border:1px solid var(--border);padding:10px 14px;border-radius:999px}
 
-    .msg{
-      max-width:900px;
-      margin:10px 0;
-      padding:14px 18px; line-height:1.55;
-      border-radius:16px;
-      box-shadow:0 10px 30px rgba(0,0,0,.25);
-      word-wrap:break-word; white-space:pre-wrap;
-      font-size:16px;
+    .card{height:100%;max-width:1260px;margin:0 auto;width:100%;
+      display:grid;grid-template-rows:auto 1fr auto;gap:14px;
+      background:rgba(16,18,24,.4);backdrop-filter:blur(6px);
+      border:1px solid #1e2430;border-radius:18px;padding:16px 16px 14px;
+      box-shadow:0 30px 80px rgba(0,0,0,.45)
     }
-    .msg.user{
-      margin-left:auto; background:var(--bubble-user);
-      border:1px solid #2b3a45;
-    }
-    .msg.assistant{
-      margin-right:auto; background:var(--bubble-assistant);
-      border:1px solid #24303a;
-    }
-    .msg.error{
-      background:#3b1d1d; border:1px solid #7a2e2e; color:#f3caca;
-    }
-
-    /* Composer */
-    .composer{
-      display:grid; grid-template-columns:1fr auto; gap:12px;
-    }
+    .sysline{color:#c4cad4;background:#0e1116;border:1px dashed #283140;border-radius:12px;padding:12px 16px}
+    .scroll{overflow:auto;border-radius:14px;background:#0d1218;border:1px solid var(--border);padding:14px;display:grid;gap:12px}
+    .msg{padding:12px 16px;border-radius:14px;line-height:1.55;max-width:80%}
+    .me{justify-self:end;background:var(--bubble-me)}
+    .bot{justify-self:start;background:var(--bubble-bot)}
+    .err{background:#3b1d1d;border:1px solid #7a2e2e;color:#f3caca}
     textarea{
-      width:100%; resize:none; min-height:68px;
-      background:var(--input); color:var(--text);
-      border:1px solid var(--border); border-radius:14px;
-      padding:14px 16px; line-height:1.5; font-family:inherit; font-size:16px;
+      width:100%;background:#0c1015;color:var(--text);border:1px solid var(--border);
+      border-radius:14px;padding:14px 16px;font-family:inherit;resize:none;height:84px
     }
-
-    /* Footer */
-    .footer{
-      text-align:center; color:var(--muted); font-size:13px;
-      padding:2px 0 10px;
+    .row{display:grid;grid-template-columns:1fr auto;gap:14px}
+    .send{min-width:130px}
+    .btn{border:0;padding:18px 22px;border-radius:16px;font-weight:800;cursor:pointer;
+      background:var(--accent);color:white; font-size:18px;letter-spacing:.2px;
+      box-shadow:0 10px 30px rgba(255,122,26,.25)
     }
-    .footer a{color:#b7cdfc; text-decoration:none; font-weight:700}
-    .footer a:hover{text-decoration:underline}
-
-    /* Small controls */
-    label.chk{display:flex; align-items:center; gap:8px; padding:12px 14px;
-      border-radius:999px; background:#1b2028; border:1px solid var(--border); font-weight:700}
-    input[type="checkbox"]{width:18px; height:18px}
-
-    .sliderBox{
-      display:flex; align-items:center; gap:12px;
-      padding:12px 14px; border-radius:999px; background:#1b2028; border:1px solid var(--border); font-weight:700
-    }
-    input[type="range"]{accent-color:var(--accent); width:160px}
-
-    @media (max-width:700px){
-      .top{gap:10px}
-      .composer{grid-template-columns:1fr 110px}
-      .logo{height:36px}
-    }
+    .btn:active{transform:translateY(1px)}
+    .footer{color:#aab2bd;text-align:center}
+    .footer a{color:#a7d7ff;text-decoration:none;border-bottom:1px solid rgba(167,215,255,.35)}
+    .cb{display:flex;align-items:center;gap:10px}
   </style>
 </head>
 <body>
-  <div class="page">
-
+  <div class="wrap">
     <!-- Top bar -->
-    <div class="top">
-      <div class="left">
-        <button id="btnMic" class="btn">Voice On</button>
-        <span id="state" class="pill">Idle</span>
-        <label for="speak" class="chk">
-          <input id="speak" type="checkbox" checked />
-          <span>Speak replies</span>
-        </label>
-        <div class="sliderBox">
-          <span>Rate</span>
-          <input id="rate" type="range" min="0.6" max="1.4" step="0.05" value="1.0" />
-        </div>
+    <div class="topbar">
+      <button id="toggle" class="pill">Voice On</button>
+      <div id="vstat" class="pill secondary status idle">Idle</div>
+      <label class="pill secondary cb">
+        <input id="speakCk" type="checkbox" checked>
+        <span>Speak replies</span>
+      </label>
+      <div class="pill secondary rate">
+        <span>Rate</span>
+        <input id="rate" type="range" min="0.7" max="1.4" step="0.05" value="1.0">
       </div>
+      <img src="/logo.png" alt="EDGE LIF" class="logo">
+      <div class="hint">Tip: press <b>M</b> to toggle mic</div>
+    </div>
 
-      <img src="logo.png" class="logo" alt="EDGE LIF" />
+    <!-- Main card -->
+    <div class="card">
+      <div class="sysline">Voice is optional. Press “Start Voice” and allow the microphone, or type a message.</div>
+      <div id="log" class="scroll"></div>
 
-      <div class="right">
-        <div class="pill">Tip: press <b>M</b> to toggle mic</div>
+      <div class="row">
+        <textarea id="input" placeholder="Type a message…  (Enter to send, Shift+Enter for newline)"></textarea>
+        <button id="send" class="btn send">Send</button>
       </div>
     </div>
 
-    <!-- Hint bar -->
-    <div class="hint">Voice is optional. Press “Start Voice” and allow the microphone, or type a message.</div>
-
-    <!-- CHAT LOG (internal scroll container) -->
-    <div id="log"></div>
-
-    <!-- Composer -->
-    <div class="composer">
-      <textarea id="input" placeholder="Type a message…  (Enter to send, Shift+Enter for newline)"></textarea>
-      <button id="send" class="btn" style="min-width:110px">Send</button>
-    </div>
-
-    <!-- Footer -->
-    <div class="footer">
-      Created by <a href="https://www.linkedin.com/in/awaiz-ahmed/" target="_blank" rel="noopener">Awaiz Ahmed</a>
-    </div>
+    <div class="footer">Created by <a href="https://www.linkedin.com/in/awaiz-ahmed/" target="_blank" rel="noopener">Awaiz Ahmed</a></div>
   </div>
 
-  <!-- Smart autoscroll helper (doesn't replace your main chat logic) -->
   <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      const log = document.getElementById('log');
-      let autoScroll = true;
+    // ----------------------- Helpers & UI -----------------------
+    const $ = s => document.querySelector(s);
+    const log = $('#log'), input = $('#input'), sendBtn = $('#send');
+    const toggleBtn = $('#toggle'), voiceStatus = $('#vstat');
+    const speakCk = $('#speakCk'), rate = $('#rate');
 
-      function nearBottom() {
-        return (log.scrollHeight - log.scrollTop - log.clientHeight) < 60;
+    function push(role, text, cls=''){
+      const div = document.createElement('div');
+      div.className = `msg ${role==='user'?'me':'bot'} ${cls}`;
+      div.textContent = text;
+      log.appendChild(div);
+      log.scrollTop = log.scrollHeight;
+    }
+    function showStatus(kind, text){
+      voiceStatus.className = `pill secondary status ${kind}`;
+      voiceStatus.textContent = text;
+    }
+
+    const history = []; // chat history
+    function limitWords(s, n=100){
+      const words = String(s||'').trim().split(/\s+/);
+      return words.length > n ? words.slice(0, n).join(' ') + '…' : s;
+    }
+
+    // ----------------------- TTS (Emily preferred) -----------------------
+    let voice = null;
+    function chooseVoice(){
+      const voices = window.speechSynthesis.getVoices() || [];
+      voice = null;
+      // Prefer Emily if present
+      for (const v of voices){
+        if (/Microsoft Emily Online \(Natural\)/i.test(v.name)){ voice = v; break; }
       }
-      function updateFlag(){ autoScroll = nearBottom(); }
-      function scrollToBottom(){ if (autoScroll) log.scrollTop = log.scrollHeight; }
+      // sensible fallbacks
+      if (!voice){
+        voice = voices.find(v=>/Microsoft|Google US English|Samantha|Daniel|Serena/i.test(v.name)) || voices[0] || null;
+      }
+    }
+    window.speechSynthesis.onvoiceschanged = chooseVoice;
+    chooseVoice();
 
-      // expose minimal hooks so your chat.js can call them after appending bubbles
-      window.__chatScroll = { scrollToBottom };
+    let speaking = false;
+    const controller = new AbortController(); // to stop queued speech
 
-      log.addEventListener('scroll', updateFlag);
+    function speak(text){
+      if (!speakCk.checked) return;
+      try{
+        const u = new SpeechSynthesisUtterance(text);
+        if (voice) u.voice = voice;
+        u.rate = parseFloat(rate.value) || 1.0;
+        u.onstart = ()=>{ speaking = true; showStatus('speak','Speaking'); };
+        u.onend   = ()=>{ speaking = false; showStatus(listening?'listen':'idle', listening?'Listening':'Idle'); };
+        window.speechSynthesis.cancel(); // cancel anything pending
+        window.speechSynthesis.speak(u);
+      }catch(e){ console.warn('TTS error', e); }
+    }
+    function stopSpeaking(){
+      try{ window.speechSynthesis.cancel(); }catch(e){}
+      speaking = false;
+    }
+
+    // ----------------------- STT (webkitSpeechRecognition) -----------------------
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    let rec = null, listening = false, lastTranscript = '', cooldown = false;
+
+    function initSR(){
+      if (!SR) return;
+      rec = new SR();
+      rec.lang = 'en-US';
+      rec.continuous = false; // end on silence
+      rec.interimResults = true;
+      rec.maxAlternatives = 1;
+
+      rec.onstart = () => { listening = true; showStatus('listen','Listening'); };
+      rec.onerror = (e) => { showStatus('idle','Idle'); console.warn('ASR error', e); listening=false; };
+      rec.onend = async () => {
+        listening = false;
+        showStatus('idle','Idle');
+        const text = squash(lastTranscript).trim();
+        lastTranscript = '';
+        if (text) {
+          await handleUserText(text);
+        }
+        // small cooldown to avoid fast re-trigger
+        setTimeout(()=> { if (voiceOn) startSR(); }, 1000);
+      };
+      rec.onresult = (ev) => {
+        let final = '';
+        for (let i=ev.resultIndex; i<ev.results.length; i++){
+          const r = ev.results[i];
+          if (r.isFinal) final += r[0].transcript + ' ';
+          else lastTranscript = r[0].transcript;
+        }
+        if (final) lastTranscript += ' ' + final;
+      };
+    }
+    initSR();
+
+    // collapse obvious repetitions from partial results
+    function squash(t){
+      return String(t||'')
+        .replace(/\s+/g,' ')
+        .replace(/\b(\w+)( \1\b)+/gi,'$1'); // hello hello hello -> hello
+    }
+
+    let voiceOn = false;
+    function startSR(){
+      if (!rec) return;
+      try{ rec.start(); }catch{} // start can throw if already started
+    }
+    function stopSR(){
+      if (!rec) return;
+      try{ rec.stop(); }catch{}
+      listening = false;
+      showStatus('idle','Idle');
+    }
+
+    // interrupt speaking when user starts talking again
+    document.addEventListener('keydown', (e)=>{
+      if (e.key.toLowerCase()==='m'){ e.preventDefault(); toggleVoice(); }
     });
-  </script>
 
-  <!-- Your main client logic (speech, send, UI wiring, etc.) -->
-  <script src="/chat.js" defer></script>
+    toggleBtn.onclick = toggleVoice;
+    function toggleVoice(){
+      voiceOn = !voiceOn;
+      toggleBtn.textContent = voiceOn ? 'Voice On' : 'Voice Off';
+      if (voiceOn){ stopSpeaking(); startSR(); }
+      else { stopSR(); stopSpeaking(); }
+    }
+
+    // ----------------------- Chat (calls /api/chat) -----------------------
+    async function postJSON(url, payload){
+      const r = await fetch(url, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
+      const text = await r.text();
+      if (!r.ok) throw new Error(`HTTP ${r.status} – ${text}`);
+      return JSON.parse(text);
+    }
+
+    async function handleUserText(text){
+      push('user', text);
+      history.push({role:'user', content:text});
+      try{
+        // stop listening while we ask the model
+        stopSR();
+        const res = await postJSON('/api/chat', {messages: history.slice(-8)});
+        const raw = res.reply || '';
+        const reply = limitWords(raw, 100);
+        history.push({role:'assistant', content:reply});
+        push('assistant', reply);
+        speak(reply);
+      }catch(e){
+        push('assistant', `[error] ${e.message}`, 'err');
+      }finally{
+        // after 1s, resume listening automatically if voice mode is on
+        setTimeout(()=>{ if (voiceOn) startSR(); }, 1000);
+      }
+    }
+
+    sendBtn.onclick = async ()=>{
+      const text = input.value.trim();
+      if (!text) return;
+      input.value = '';
+      await handleUserText(text);
+      input.focus();
+    };
+    input.addEventListener('keydown', (ev)=>{
+      if (ev.key==='Enter' && !ev.shiftKey){
+        ev.preventDefault(); sendBtn.click();
+      }
+    });
+
+    // If user starts talking while TTS is speaking, interrupt speech and switch to listening
+    document.addEventListener('visibilitychange',()=>{}); // no-op; keeps audio context warm
+  </script>
 </body>
 </html>
