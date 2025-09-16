@@ -1,11 +1,11 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
+  <meta charset="utf-t" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>EDGE Voice Chat</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700;800&display=swap" rel="stylesheet">
   <style>
     :root{
       --bg:#0b0c10; --panel:#12141a; --muted:#9aa0a6; --text:#e6e9ef;
@@ -17,11 +17,11 @@
     body{
       margin:0;background:radial-gradient(1200px 1200px at 50% -20%, #151821 0%, #0b0c10 50%, #000 100%);
       color:var(--text); font-family:'Montserrat',system-ui,Segoe UI,Roboto,sans-serif;
-      overflow:hidden; /* page never scrolls */
+      overflow:hidden;
     }
-    .wrap{height:100%;display:grid;grid-template-rows:auto 1fr auto;gap:12px;padding:18px;  min-height:0;} 
-    .topbar{display:flex;align-items:center;gap:14px;justify-content:center; flex-wrap: wrap}
-    .logo{height:80px;object-fit:contain;filter:drop-shadow(0 8px 24px rgba(0,0,0,.45)); order:-1; flex:0 0 100%; display:block; margin:0 auto 6px;}
+    .wrap{height:100%;display:grid;grid-template-rows:auto 1fr auto;gap:12px;padding:18px;min-height:0;}
+    .topbar{display:flex;align-items:center;gap:14px;justify-content:center;flex-wrap:wrap}
+    .logo{height:80px;object-fit:contain;filter:drop-shadow(0 8px 24px rgba(0,0,0,.45));order:-1;flex:0 0 100%;display:block;margin:0 auto 6px;}
     .pill{display:inline-flex;align-items:center;gap:10px;padding:12px 18px;border-radius:999px;background:var(--accent);color:#fff;font-weight:800;cursor:pointer;box-shadow:0 10px 30px rgba(0,0,0,.35)}
     .pill.secondary{background:var(--accent-2);color:var(--text);border:1px solid var(--border)}
     .pill[disabled]{opacity:.6;cursor:not-allowed}
@@ -33,47 +33,93 @@
 
     .card{
       height:100%;max-width:1260px;margin:0 auto;width:100%;
-      display:grid;grid-template-rows:auto 1fr auto;gap:14px;
+      display:flex;align-items:center;justify-content:center;
       background:rgba(16,18,24,.4);backdrop-filter:blur(6px);
       border:1px solid #1e2430;border-radius:18px;padding:16px 16px 14px;
-      box-shadow:0 30px 80px rgba(0,0,0,.45); min-height:0; 
+      box-shadow:0 30px 80px rgba(0,0,0,.45);min-height:0;
     }
-    .sysline{color:#c4cad4;background:#0e1116;border:1px dashed #283140;border-radius:12px;padding:12px 16px}
-    .scroll{
-      overflow-y:auto;
-      max-height: clamp(240px, 50vh, 640px);          /* was overflow:auto — fine too */
-      min-height:0;              /* NEW */
-      -webkit-overflow-scrolling:touch;  /* optional */
-      overscroll-behavior:contain;       /* optional */
-      border-radius:14px;
-      background:#0d1218;
-      border:1px solid var(--border);
-      padding:14px;
-      display:grid;
-      gap:12px;
-      }
-    .msg{padding:12px 16px;border-radius:14px;line-height:1.55;max-width:80%}
-    .me{justify-self:end;background:var(--bubble-me)}
-    .bot{justify-self:start;background:var(--bubble-bot)}
-    .err{background:#3b1d1d;border:1px solid #7a2e2e;color:#f3caca}
-    textarea{
-      width:100%;background:#0c1015;color:var(--text);border:1px solid var(--border);
-      border-radius:14px;padding:14px 16px;font-family:inherit;resize:none;height:84px
-    }
-    .row{display:grid;grid-template-columns:1fr auto;gap:14px}
-    .send{min-width:90px}
-    .btn{border:0;padding:18px 22px;border-radius:16px;font-weight:800;cursor:pointer;
-      background:var(--accent);color:white; font-size:18px;letter-spacing:.2px;
-      box-shadow:0 10px 30px rgba(255,122,26,.25)
-    }
-    .btn:active{transform:translateY(1px)}
     .footer{color:#aab2bd;text-align:center}
     .footer a{color:#a7d7ff;text-decoration:none;border-bottom:1px solid rgba(167,215,255,.35)}
+
+    /* Animated blob - VISUALS UPDATED */
+    .blob-wrap{
+      display:flex;flex-direction:column;align-items:center;justify-content:center;
+      gap:16px; text-align:center;
+    }
+    .blob{
+      width:min(38vh, 420px); /* Smaller size */
+      height:min(38vh, 420px); /* Smaller size */
+      border-radius:50%;
+      position:relative;
+      /* New layered background for a glassy/glowing effect */
+      background:
+        /* Inner light reflections */
+        radial-gradient(circle at 60% 30%, rgba(200, 220, 255, .35), transparent 40%),
+        /* Main sphere gradient */
+        radial-gradient(circle at 35% 35%, #8f79ff, #502eff 45%, #2a1488 80%);
+      box-shadow: 0 25px 80px rgba(80, 46, 255, .35), /* Outer glow */
+                  inset 0 0 15px rgba(255, 255, 255, 0.1), /* Inner rim light */
+                  inset 0 -20px 60px rgba(0,0,0,.4); /* Bottom shadow */
+      border: 1px solid rgba(255, 255, 255, 0.08); /* Subtle glassy edge */
+      display:flex;align-items:center;justify-content:center;
+      animation: wobble 11s ease-in-out infinite, floaty 7s ease-in-out infinite;
+      will-change: transform, border-radius;
+    }
+    /* This wrapper ensures text stays above pseudo-elements */
+    .blob > div {
+      position: relative;
+      z-index: 10;
+    }
+    /* Existing subtle moving highlight */
+    .blob::after{
+      content:"";
+      position:absolute;inset:0;border-radius:inherit;
+      background: radial-gradient(180px 180px at 65% 60%, rgba(150, 210, 255, .15), transparent 60%);
+      mix-blend-mode: screen;
+      animation: shimmer 8s ease-in-out infinite alternate;
+      pointer-events:none;
+    }
+    /* New internal glowing element for more depth */
+    .blob::before{
+      content:"";
+      position:absolute;inset:20%;border-radius:inherit;
+      background: radial-gradient(circle, rgba(143,121,255,.25), transparent 70%);
+      filter: blur(10px);
+      z-index: 1;
+      opacity: .8;
+    }
+    .blob h1{
+      font-size: clamp(20px, 3vw, 38px); /* Adjusted for smaller circle */
+      margin:0 12px; font-weight:800; letter-spacing:.2px;
+      text-shadow: 0 3px 25px rgba(0,0,0,.45);
+    }
+    /* New style for subtitle moved outside the blob */
+    .subtitle{
+      color: #b9c1d0;
+      font-size: clamp(16px, 1.5vw, 19px);
+      font-weight: 500;
+      margin-top:20px;
+      max-width:480px;
+      opacity: 0.9;
+    }
+
+    /* Tweaked keyframes for a more subtle, fluid motion */
+    @keyframes wobble{
+      0%,100%{ transform: translate(0,0) scale(1); border-radius:50% 50% 50% 50%/50% 50% 50% 50%; }
+      20%{ transform: translate(5px,-3px) scale(1.02); border-radius:48% 52% 51% 49%/49% 49% 51% 51%; }
+      40%{ transform: translate(-6px,4px) scale(0.98); border-radius:52% 48% 50% 50%/48% 52% 50% 50%; }
+      60%{ transform: translate(4px,4px) scale(1.01); border-radius:50% 50% 48% 52%/51% 50% 50% 49%; }
+      80%{ transform: translate(-3px,-5px) scale(0.99); border-radius:49% 51% 52% 48%/50% 49% 51% 50%; }
+    }
+    @keyframes floaty{ 0%,100%{ filter: drop-shadow(0 35px 70px rgba(0,0,0,.4)); }
+                        50%{ filter: drop-shadow(0 25px 50px rgba(0,0,0,.3)); } }
+    @keyframes shimmer{ 0%,100%{ transform: translate(0,0) rotate(0deg) }
+                         50%{ transform: translate(-8px, 8px) rotate(-10deg) } }
   </style>
 </head>
 <body>
   <div class="wrap">
-    <!-- Top bar -->
+    <!-- Top bar / keep voice controls + status + logo -->
     <div class="topbar">
       <button id="toggle" class="pill">Voice Off</button>
       <div class="hint">Tip: press <b>M</b> to toggle mic</div>
@@ -81,88 +127,76 @@
       <img src="/logo.png" alt="EDGE LIF" class="logo">
     </div>
 
-    <!-- Main card -->
+    <!-- Main card with animated circle - HTML STRUCTURE UPDATED -->
     <div class="card">
-      <div class="sysline">Voice is optional. Press “Start Voice” and allow the microphone, or type a message.</div>
-      <div id="log" class="scroll"></div>
-
-      <div class="row">
-        <textarea id="input" placeholder="Type a message…  (Enter to send, Shift+Enter for newline)"></textarea>
-        <button id="send" class="btn send">Send</button>
+      <div class="blob-wrap">
+        <div class="blob" aria-live="polite">
+          <div>
+            <h1>Hi, I'm EDGE AI</h1>
+          </div>
+        </div>
+        <!-- Welcome text moved outside and below the blob -->
+        <p class="subtitle">Welcome to EDGE, where learning meets innovation.</p>
       </div>
     </div>
 
-    <div class="footer">Created by <a href="https://www.linkedin.com/in/awaiz-ahmed/" target="_blank" rel="noopener">Awaiz Ahmed & Yumna Salaas</a></div>
+    <div class="footer">Created by <a href="https://www.linkedin.com/in/awaiz-ahmed/" target="_blank" rel="noopener">Awaiz Ahmed &amp; Yumna Salaas</a></div>
   </div>
 
   <script>
     // ----------------------- Helpers & UI -----------------------
     const $ = s => document.querySelector(s);
-    const log = $('#log'), input = $('#input'), sendBtn = $('#send');
     const toggleBtn = $('#toggle'), voiceStatus = $('#vstat');
     const SHOW_DIAGS = false;
 
-    function push(role, text, cls=''){
-      const div = document.createElement('div');
-      div.className = `msg ${role==='user'?'me':'bot'} ${cls}`;
-      div.textContent = text;
-      log.appendChild(div);
-      log.scrollTop = log.scrollHeight;
-    }
-    function showStatus(kind, text){
+    // Keep a minimal message history for the backend
+    const history = [];
+
+    // No visible chat log; push() is a no-op
+    function push(){ /* intentionally empty */ }
+
+    function showStatus(kind, text) {
       voiceStatus.className = `pill secondary status ${kind}`;
       voiceStatus.textContent = text;
     }
+    
 
-    const history = [];
-    function limitWords(s, n=70){
-      const words = String(s||'').trim().split(/\s+/);
-      return words.length > n ? words.slice(0, n).join(' ') + '…' : s;
-    }
-
-    // ----------------------- TTS (Emily preferred) -----------------------
     let voice = null;
-    const FORCE_VOICE_NAME = '';   // <-- set to a female voice name to hard-lock it
+    const FORCE_VOICE_NAME = '';
     const FEMALE_VOICE_HINTS = [
       'Microsoft Emily', 'Emily', 'Microsoft Zira', 'Zira',
       'Samantha', 'Victoria', 'Serena', 'Moira', 'Tessa', 'Karen', 'Kate', 'Susan',
       'Google UK English Female', 'Google US English',
-      'Wavenet-F', 'Neural2-F' // some browsers/vendors use these patterns
+      'Wavenet-F', 'Neural2-F'
     ];
 
     function chooseVoice(){
       const voices = window.speechSynthesis.getVoices() || [];
       voice = null;
-
-      // 1) Hard lock by exact name if provided
       if (FORCE_VOICE_NAME) {
         voice = voices.find(v => v.name.includes(FORCE_VOICE_NAME)) || null;
       }
-
-      // 2) Prefer English female-ish names
       if (!voice) {
         const en = voices.filter(v => /^en[-_]/i.test(v.lang));
         voice = en.find(v =>
           FEMALE_VOICE_HINTS.some(h => v.name.toLowerCase().includes(h.toLowerCase()))
         ) || null;
       }
-
-      // 3) Fallback: any English voice, then any voice
-      if (!voice) voice = voices.find(v => /^en[-_]/i.test(v.lang)) || voices[0] || null;
+      if (!voice) voice = (window.speechSynthesis.getVoices() || []).find(v => /^en[-_]/i.test(v.lang)) || null;
     }
     window.speechSynthesis.onvoiceschanged = chooseVoice;
     chooseVoice();
 
     let speaking = false;
     function speak(text){
-      if (!voiceOn) return;               // speak only when Voice is On
+      if (!voiceOn) return;
       try{
         const u = new SpeechSynthesisUtterance(text);
         if (voice) u.voice = voice;
-        u.rate = 1.0;                      // normal rate
+        u.rate = 1.0;
         u.onstart = ()=>{ speaking = true; showStatus('speak','Speaking'); };
         u.onend   = ()=>{ speaking = false; showStatus(listening?'listen':'idle', listening?'Listening':'Idle'); };
-        window.speechSynthesis.cancel();   // clear any queue
+        window.speechSynthesis.cancel();
         window.speechSynthesis.speak(u);
       }catch(e){ console.warn('TTS error', e); }
     }
@@ -208,7 +242,7 @@
     function squash(t){
       return String(t||'')
         .replace(/\s+/g,' ')
-        .replace(/\b(\w+)( \1\b)+/gi,'$1'); // hello hello hello -> hello
+        .replace(/\\b(\\w+)( \\1\\b)+/gi,'$1');
     }
 
     let voiceOn = false;
@@ -224,31 +258,17 @@
       if (voiceOn){ stopSpeaking(); startSR(); }
       else { stopSR(); stopSpeaking(); }
     }
-    // example handlers:
-    document.getElementById('btnVoice').onclick = () => {
-      const on = !document.body.classList.contains('voice-on');
-      document.body.classList.toggle('voice-on', on);
-      toggleVoice(on);
-      // update status pill from Idle <-> Listening here
-    };
-    window.addEventListener('keydown', (e) => {
-      if (e.key.toLowerCase() === 'm') {
-        const on = !document.body.classList.contains('voice-on');
-        document.body.classList.toggle('voice-on', on);
-        toggleVoice(on);
-      }
-    });
 
     // ----------------------- Chat (calls /api/chat) -----------------------
     async function postJSON(url, payload){
       const r = await fetch(url, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
       const text = await r.text();
-      if (!r.ok) throw new Error(`HTTP ${r.status} – ${text}`);
+      if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + text);
       return JSON.parse(text);
     }
 
     async function handleUserText(text){
-      push('user', text);
+      // No visible chat, but keep history for context
       history.push({role:'user', content:text});
       try{
         stopSR();
@@ -256,81 +276,20 @@
         const raw = res.reply || '';
         const reply = limitWords(raw, 100);
         history.push({role:'assistant', content:reply});
-        push('assistant', reply);
         speak(reply);
       }catch(e){
-        push('assistant', `[error] ${e.message}`, 'err');
+        console.warn('Chat error', e);
+        // Optionally speak an error
+        speak('Sorry, I had trouble reaching the server.');
       }finally{
-        // after 1s, resume listening automatically if voice mode is on
         setTimeout(()=>{ if (voiceOn) startSR(); }, 1000);
       }
     }
 
-    sendBtn.onclick = async ()=>{
-      const text = input.value.trim();
-      if (!text) return;
-      input.value = '';
-      await handleUserText(text);
-      input.focus();
-    };
-    input.addEventListener('keydown', (ev)=>{
-      if (ev.key==='Enter' && !ev.shiftKey){
-        ev.preventDefault(); sendBtn.click();
-      }
-    });
-
-    // If user starts talking while TTS is speaking, interrupt speech and switch to listening
-    document.addEventListener('visibilitychange',()=>{}); // no-op; keeps audio context warm
-    // Minimal diagnostics for Double
-    if (SHOW_DIAGS) (function(){
-      const el = document.createElement('div');
-      el.style.cssText = 'position:fixed;left:12px;bottom:12px;z-index:9999;background:#0f172a;color:#e5e7eb;border:1px solid #334155;border-radius:12px;padding:12px 14px;font:12px/1.3 system-ui;max-width:420px';
-      el.innerHTML = `
-        <div style="font-weight:700;margin-bottom:6px">Diagnostics</div>
-        <div>UA: <code style="font-size:11px">${navigator.userAgent}</code></div>
-        <div>SpeechRecognition: <b>${'webkitSpeechRecognition'in window || 'SpeechRecognition'in window}</b></div>
-        <div>speechSynthesis: <b>${'speechSynthesis'in window}</b></div>
-        <div>getUserMedia: <b>${!!(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia)}</b></div>
-        <div id="perm">Mic permission: <i>checking…</i></div>
-        <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
-          <button id="beep" style="padding:6px 10px;border-radius:8px;border:0;background:#f97316;color:#fff;cursor:pointer">Play test beep</button>
-          <button id="mic" style="padding:6px 10px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:#e5e7eb;cursor:pointer">Mic test</button>
-        </div>
-      `;
-      document.body.appendChild(el);
-
-      // Autoplay / TTS unlock test
-      document.getElementById('beep').onclick = async () => {
-        try {
-          const ctx = new (window.AudioContext||window.webkitAudioContext)();
-          await ctx.resume();
-          const o = ctx.createOscillator(); o.connect(ctx.destination); o.start(); setTimeout(()=>o.stop(), 250);
-          if (speechSynthesis) { const u = new SpeechSynthesisUtterance('Audio unlocked'); speechSynthesis.speak(u); }
-        } catch (e) { alert('Audio error: ' + e); }
-      };
-
-      // Mic permission + gUM test
-      (async () => {
-        const permEl = document.getElementById('perm');
-        try {
-          if (!navigator.permissions) { permEl.innerHTML = 'Mic permission: <b>unknown</b>'; return; }
-          const st = await navigator.permissions.query({ name: 'microphone' });
-          permEl.innerHTML = 'Mic permission: <b>'+ st.state +'</b>';
-        } catch { permEl.innerHTML = 'Mic permission: <b>unknown</b>'; }
-      })();
-
-      document.getElementById('mic').onclick = async () => {
-        try {
-          const s = await navigator.mediaDevices.getUserMedia({ audio: true });
-          const tracks = s.getAudioTracks();
-          alert('Mic gUM success. Track: ' + (tracks[0] && tracks[0].label || 'OK'));
-          s.getTracks().forEach(t=>t.stop());
-        } catch (e) {
-          alert('Mic blocked: ' + e.message);
-        }
-      };
-    })();
-</script>
-
+    function limitWords(s, n=70){
+      const words = String(s||'').trim().split(/\\s+/);
+      return words.length > n ? words.slice(0, n).join(' ') + '…' : s;
+    }
+  </script>
 </body>
 </html>
