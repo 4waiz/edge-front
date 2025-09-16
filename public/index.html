@@ -1,73 +1,103 @@
 <!doctype html>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>EDGE Voice Chat</title>
+<title>EDGE Voice</title>
 <link rel="icon" href="/logo.png" />
 <style>
-  :root { --bg:#0b0b0e; --panel:#15161a; --muted:#9aa0a6; --text:#e6e9ef; --accent:#f97316; --border:#2a2f36; --input:#0e1013 }
-  *{ box-sizing:border-box }
-  body{ margin:0; background:var(--bg); color:var(--text); font:16px/1.5 system-ui,Segoe UI,Roboto }
-  .wrap{ max-width:980px; margin:28px auto; padding:0 16px }
-  .card{ background:var(--panel); border:1px solid var(--border); border-radius:14px; padding:20px; display:grid; gap:14px }
-  /* header logo (big + centered) */
-  .head{ display:flex; justify-content:center; align-items:center; padding:6px 0 10px }
-  .head img{ height:96px; width:auto; filter:drop-shadow(0 6px 18px rgba(0,0,0,.35)); }
-  @media (max-width:520px){ .head img{ height:82px; } }
+  :root{
+    --bg:#0b0b0e; --panel:#0f1116; --muted:#9aa0a6; --text:#e6e9ef;
+    --accent:#f97316; --accent2:#00e6ff; --border:#262a33; --input:#0e1013;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:
+      radial-gradient(1200px 800px at 80% -10%, #0a1f31 0%, transparent 60%),
+      radial-gradient(800px 600px at -10% 110%, #25132c 0%, transparent 60%),
+      var(--bg);
+    color:var(--text); font:16px/1.55 system-ui, Segoe UI, Roboto, sans-serif}
+  .wrap{max-width:1000px;margin:28px auto;padding:0 16px}
+  .card{
+    position:relative; background:linear-gradient(180deg,#10131a 0%,#0b0d12 100%);
+    border:1px solid var(--border); border-radius:18px; padding:22px; display:grid; gap:16px;
+    box-shadow:0 20px 70px rgba(0,0,0,.55);
+  }
+  /* glow border */
+  .card:before{
+    content:""; position:absolute; inset:-1px; border-radius:20px; z-index:-1;
+    background:conic-gradient(from 180deg, #0ff, #f60, #6cf, #f60, #0ff);
+    filter:blur(18px) opacity(.25);
+  }
 
-  .log{ background:var(--input); border:1px solid var(--border); border-radius:12px; padding:12px; height:50vh; overflow:auto }
-  .msg{ max-width:78%; padding:10px 12px; border-radius:10px; margin:8px 0; white-space:pre-wrap }
-  .u{ margin-left:auto; background:#24303a }
-  .a{ background:#1b2430 }
-  .err{ background:#3b1d1d; color:#f3caca; border:1px solid #7a2e2e; border-radius:8px; padding:8px 10px; display:none }
-  .row{ display:grid; grid-template-columns:1fr auto; gap:10px }
-  textarea{ background:var(--input); color:var(--text); border:1px solid var(--border); border-radius:12px; padding:10px; resize:none; height:86px }
-  button{ background:var(--accent); color:#fff; border:0; border-radius:12px; padding:0 18px; font-weight:800; cursor:pointer; }
-  #send{ height:86px }
-  .toolbar{ display:flex; gap:10px; align-items:center; flex-wrap:wrap }
-  .pill{ background:var(--input); border:1px solid var(--border); border-radius:999px; padding:8px 12px; display:flex; gap:8px; align-items:center; color:var(--muted); }
-  .mic{ background:#2b2f36; border:1px solid var(--border); border-radius:12px; padding:10px 14px; display:flex; gap:8px; align-items:center; cursor:pointer; }
-  .dot{ width:10px; height:10px; border-radius:50%; background:#666 }
-  .mic.on .dot{ background:#ef4444; box-shadow:0 0 10px #ef4444 }
-  select, input[type=range]{ accent-color:var(--accent); }
+  /* header / logo */
+  .head{display:flex; justify-content:center; align-items:center; padding:6px 0 8px}
+  .head img{height:112px; width:auto; filter:drop-shadow(0 10px 24px rgba(0,0,0,.45))}
+  @media (max-width:560px){ .head img{height:92px} }
 
-  /* footer credit */
-  .foot{ display:flex; gap:6px; align-items:center; justify-content:center; margin-top:4px; color:var(--muted); text-align:center; flex-wrap:wrap }
-  .foot a{ color:var(--text); text-decoration:none; border-bottom:1px dotted var(--accent); }
-  .foot a:hover{ color:var(--accent); }
+  /* controls row */
+  .toolbar{display:flex; gap:12px; align-items:center; flex-wrap:wrap; justify-content:space-between}
+  .left, .right{display:flex; gap:12px; align-items:center; flex-wrap:wrap}
+  .pill{background:var(--input); border:1px solid var(--border); color:var(--muted);
+        border-radius:999px; padding:8px 12px; display:flex; gap:10px; align-items:center}
+  .pill input[type=range]{accent-color:var(--accent)}
+  .hint{font-size:12px; color:var(--muted)}
+
+  /* mic */
+  #mic{
+    position:relative; display:flex; align-items:center; gap:10px; cursor:pointer;
+    background:linear-gradient(180deg,#18202a,#141820); color:#fff; border:1px solid #1e2630;
+    padding:10px 16px; border-radius:12px; font-weight:800; letter-spacing:.2px;
+  }
+  #mic .dot{width:12px;height:12px;border-radius:50%;background:#69707a;box-shadow:0 0 0 0 rgba(239,68,68,0)}
+  #mic.on .dot{background:#ef4444; box-shadow:0 0 16px 2px rgba(239,68,68,.65), 0 0 4px 1px #ef4444}
+  #mic .wave{position:absolute; inset:-4px; border-radius:14px; opacity:0; pointer-events:none}
+  #mic.on .wave{animation:pulse 1.6s infinite; background:radial-gradient(closest-side, rgba(239,68,68,.35), transparent)}
+  @keyframes pulse{0%{opacity:.45; transform:scale(.98)} 70%{opacity:.06; transform:scale(1.06)} 100%{opacity:0; transform:scale(1.08)}}
+
+  /* chat log */
+  .log{background:var(--input); border:1px solid var(--border); border-radius:14px; padding:12px; height:52vh; overflow:auto}
+  .msg{max-width:80%; padding:10px 12px; border-radius:12px; margin:10px 0; white-space:pre-wrap}
+  .u{margin-left:auto;background:#24303a}
+  .a{background:#1b2430}
+  .err{background:#3b1d1d;color:#f3caca;border:1px solid #7a2e2e;border-radius:8px;padding:8px 10px;display:none}
+
+  /* input row */
+  .row{display:grid; grid-template-columns:1fr auto; gap:12px}
+  textarea{background:var(--input); color:var(--text); border:1px solid var(--border); border-radius:12px;
+           padding:12px; resize:none; height:92px}
+  button.send{background:linear-gradient(180deg,#ff8a33,#f97316); color:#fff; border:0; border-radius:12px;
+              padding:0 18px; font-weight:800; height:92px; cursor:pointer}
+  button.send:disabled{opacity:.6; cursor:not-allowed}
+
+  .foot{margin-top:4px;text-align:center;color:var(--muted)}
+  .foot a{color:var(--text); text-decoration:none; border-bottom:1px dotted var(--accent)}
+  .foot a:hover{color:var(--accent)}
 </style>
 
 <div class="wrap">
   <div class="card">
-    <!-- Header logo -->
-    <div class="head"><img src="/logo.png" alt="EDGE" /></div>
+    <div class="head"><img src="/logo.png" alt="EDGE LIF" /></div>
 
-    <!-- Conversation -->
+    <div class="toolbar">
+      <div class="left">
+        <div id="mic" title="Start/stop interactive conversation">
+          <div class="wave"></div>
+          <div class="dot"></div><span id="micLabel">Start Voice</span>
+        </div>
+        <div class="hint">Tip: press <b>M</b> to toggle mic</div>
+      </div>
+      <div class="right">
+        <label class="pill"><input id="speakReplies" type="checkbox" checked /> Speak replies</label>
+        <label class="pill">Rate <input id="rate" type="range" min="0.7" max="1.3" step="0.05" value="1" /></label>
+      </div>
+    </div>
+
     <div id="log" class="log"></div>
     <div id="error" class="err"></div>
 
-    <!-- Voice toolbar -->
-    <div class="toolbar">
-      <div id="mic" class="mic" title="Click to start/stop listening">
-        <div class="dot"></div><b id="micLabel">Mic</b><span id="micHint" style="color:var(--muted);font-size:12px">— click to talk</span>
-      </div>
-
-      <label class="pill">
-        <input id="speakReplies" type="checkbox" checked />
-        Speak replies
-      </label>
-
-      <label class="pill">
-        Rate <input id="rate" type="range" min="0.7" max="1.3" step="0.05" value="1" />
-      </label>
-    </div>
-
-    <!-- Text input -->
     <div class="row">
-      <textarea id="t" placeholder="Type a message… (Enter to send, Shift+Enter for newline)"></textarea>
-      <button id="send">Send</button>
+      <textarea id="t" placeholder="Type a message…  (Enter to send, Shift+Enter for newline)"></textarea>
+      <button class="send" id="send">Send</button>
     </div>
 
-    <!-- Footer -->
     <div class="foot">
       Created by <a href="https://www.linkedin.com/in/awaiz-ahmed/" target="_blank" rel="noopener">Awaiz Ahmed</a>
     </div>
@@ -75,126 +105,135 @@
 </div>
 
 <script>
-  // ------- DOM -------
+  // ======== DOM
   const log = document.getElementById('log');
   const t   = document.getElementById('t');
-  const btn = document.getElementById('send');
+  const sendBtn = document.getElementById('send');
   const err = document.getElementById('error');
 
   const mic = document.getElementById('mic');
   const micLabel = document.getElementById('micLabel');
-  const micHint = document.getElementById('micHint');
-
   const speakReplies = document.getElementById('speakReplies');
   const rateInp = document.getElementById('rate');
 
   const history = [];
 
-  function push(role, text) {
+  function push(role, text){
     const d = document.createElement('div');
     d.className = 'msg ' + (role === 'user' ? 'u' : 'a');
     d.textContent = text;
     log.appendChild(d);
     log.scrollTop = log.scrollHeight;
   }
-  function showError(msg){
-    err.textContent = msg;
-    err.style.display = msg ? 'block' : 'none';
-  }
+  function showError(msg){ err.textContent = msg; err.style.display = msg ? 'block' : 'none'; }
+
   async function postJSON(url, payload){
-    const r = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
-    const text = await r.text();
-    let data; try { data = JSON.parse(text); } catch { data = { error:'Bad JSON', detail:text }; }
-    if(!r.ok || data.error) throw new Error((data.error || `HTTP ${r.status}`) + (data.detail ? ` — ${typeof data.detail === 'string' ? data.detail : JSON.stringify(data.detail).slice(0,200)}` : ''));
+    const r = await fetch(url, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
+    const text = await r.text(); let data; try{ data = JSON.parse(text); }catch{ data = {error:'Bad JSON', detail:text}; }
+    if(!r.ok || data.error) throw new Error((data.error || `HTTP ${r.status}`) + (data.detail ? ` — ${typeof data.detail==='string' ? data.detail : JSON.stringify(data.detail).slice(0,250)}`:''));
     return data;
   }
 
-  async function send() {
+  async function send(){
     showError('');
     const text = t.value.trim();
-    if (!text) return;
+    if(!text) return;
     t.value = '';
-    history.push({ role:'user', content:text });
+    history.push({role:'user', content:text});
     push('user', text);
-    btn.disabled = true; const old = btn.textContent; btn.textContent = '…';
 
-    try {
-      const res = await postJSON('/api/chat', { messages: history });
+    sendBtn.disabled = true; const old = sendBtn.textContent; sendBtn.textContent = '…';
+    try{
+      const res = await postJSON('/api/chat', {messages: history});
       const reply = res.reply || '[no reply]';
-      history.push({ role:'assistant', content: reply });
+      history.push({role:'assistant', content: reply});
       push('assistant', reply);
-      speak(reply);
-    } catch (e) {
-      push('assistant', '[error]');
+      speak(reply);   // will auto-resume listening when speech ends (if loop mode on)
+    }catch(e){
+      push('assistant','[error]');
       showError(String(e.message || e));
-    } finally {
-      btn.disabled = false; btn.textContent = old; t.focus();
+      autoListen(); // keep loop going
+    }finally{
+      sendBtn.disabled = false; sendBtn.textContent = old; t.focus();
     }
   }
-
-  btn.onclick = send;
+  sendBtn.onclick = send;
   t.addEventListener('keydown', (e)=>{ if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); send(); }});
+  document.addEventListener('keydown', e => { if(e.key.toLowerCase()==='m') toggleMic(); });
 
-  // ------- TTS (single voice: Microsoft Emily Online (Natural)) -------
+  // ======== TTS (single: Microsoft Emily Online/Neural)
   let voices = [];
-  function loadVoices(){
-    voices = speechSynthesis.getVoices();
-  }
-  if ('speechSynthesis' in window){
-    loadVoices();
-    window.speechSynthesis.onvoiceschanged = loadVoices;
+  function loadVoices(){ voices = speechSynthesis.getVoices(); }
+  if('speechSynthesis' in window){ loadVoices(); window.speechSynthesis.onvoiceschanged = loadVoices; }
+
+  function pickEmily(){
+    if(!voices || !voices.length) return null;
+    // prefer Microsoft Emily (Online/Natural/Neural), then Emily, then UK English, then any English
+    return voices.find(v=>/microsoft/i.test(v.name)&&/emily/i.test(v.name)&&/(natural|online|neural)/i.test(v.name))
+        || voices.find(v=>/microsoft/i.test(v.name)&&/emily/i.test(v.name))
+        || voices.find(v=>/emily/i.test(v.name))
+        || voices.find(v=>/en-GB/i.test(v.lang)&&/(natural|online|neural)/i.test(v.name))
+        || voices.find(v=>/en-GB/i.test(v.lang))
+        || voices.find(v=>/^en/i.test(v.lang))
+        || voices[0];
   }
 
-  function pickEmily() {
-    if (!voices || !voices.length) return null;
-    // Try exact / partial matches first
-    let v =
-      voices.find(v => /microsoft/i.test(v.name) && /emily/i.test(v.name) && /natural|online|neural/i.test(v.name)) ||
-      voices.find(v => /microsoft/i.test(v.name) && /emily/i.test(v.name)) ||
-      voices.find(v => /emily/i.test(v.name)) ||
-      voices.find(v => /en-GB/i.test(v.lang) && /natural|online|neural/i.test(v.name)) ||
-      voices.find(v => /en-GB/i.test(v.lang)) ||
-      voices.find(v => /^en/i.test(v.lang)) ||
-      voices[0];
-    return v || null;
-  }
-
+  let speaking = false;
   function speak(text){
-    if (!speakReplies.checked) return;
-    if (!('speechSynthesis' in window)) return;
+    if(!speakReplies.checked || !('speechSynthesis' in window)) { autoListen(); return; }
     const u = new SpeechSynthesisUtterance(text);
-    const voice = pickEmily();
-    if (voice) u.voice = voice;
+    const v = pickEmily(); if(v) u.voice = v;
     u.rate = parseFloat(rateInp.value) || 1.0;
+    u.onstart = ()=>{ speaking = true; };
+    u.onend   = ()=>{ speaking = false; autoListen(); };
+    u.onerror = ()=>{ speaking = false; autoListen(); };
+    // barge-in support: if mic starts, we call speechSynthesis.cancel() elsewhere
     speechSynthesis.cancel();
     speechSynthesis.speak(u);
   }
 
-  // ------- STT (Web Speech API) -------
+  // ======== STT (Web Speech API) with interactive loop + barge-in
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  let rec = null, listening = false, interim = '';
-  if (SR) {
+  let rec = null, loopOn = false, listening = false, interim = '';
+  if(SR){
     rec = new SR();
-    rec.lang = 'en-GB';          // match Emily (UK)
+    rec.lang = 'en-GB';
     rec.interimResults = true;
     rec.continuous = false;
-    rec.onstart = () => { listening = true; mic.classList.add('on'); micLabel.textContent = 'Listening…'; };
-    rec.onend   = () => { mic.classList.remove('on'); listening = false; micLabel.textContent = 'Mic'; if (t.value.trim()) send(); };
-    rec.onerror = (e) => { mic.classList.remove('on'); listening = false; showError('Mic error: ' + e.error); };
+
+    rec.onstart = () => {
+      listening = true; mic.classList.add('on'); micLabel.textContent = 'Listening…';
+      // barge-in: stop TTS the moment we start listening
+      if('speechSynthesis' in window) speechSynthesis.cancel();
+    };
     rec.onresult = (ev) => {
-      let finalText = ''; interim = '';
-      for (const r of ev.results) {
-        if (r.isFinal) finalText += r[0].transcript;
-        else interim += r[0].transcript;
-      }
+      let finalText=''; interim='';
+      for(const r of ev.results){ if(r.isFinal) finalText+=r[0].transcript; else interim+=r[0].transcript; }
       t.value = (finalText || interim).trim();
     };
+    rec.onerror = (e)=>{ listening=false; mic.classList.remove('on'); showError('Mic error: '+e.error); if(loopOn) autoListen(); };
+    rec.onend   = ()=>{
+      listening = false; mic.classList.remove('on'); micLabel.textContent = loopOn ? 'Voice On' : 'Start Voice';
+      // If user said something, send; else if loop is on, try to listen again
+      if(t.value.trim()) send(); else if(loopOn && !speaking) autoListen();
+    };
   } else {
-    micHint.textContent = '— not supported in this browser';
+    // Non-support message
+    document.querySelector('.hint').textContent = 'Voice needs Chrome/Edge (Web Speech API)';
   }
-  mic.onclick = () => {
-    if (!rec){ alert('Speech recognition is not supported in this browser. Use Chrome/Edge.'); return; }
+
+  function autoListen(){
+    if(!loopOn || !rec) return;
+    if(speaking) return; // wait until TTS ends
+    try{ rec.start(); }catch(e){}
+  }
+
+  function toggleMic(){
+    if(!rec){ alert('Speech recognition not supported in this browser. Try Chrome or Edge.'); return; }
     showError('');
-    if (!listening){ try { rec.start(); } catch {} } else { try { rec.stop(); } catch {} }
-  };
+    loopOn = !loopOn;
+    if(loopOn){ mic.classList.add('on'); micLabel.textContent = 'Voice On'; autoListen(); }
+    else{ mic.classList.remove('on'); micLabel.textContent = 'Start Voice'; try{rec.stop();}catch{} if('speechSynthesis' in window) speechSynthesis.cancel(); }
+  }
+  mic.onclick = toggleMic;
 </script>
