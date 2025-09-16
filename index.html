@@ -2,90 +2,50 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>EDGE Voice Chat</title>
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;800&display=swap" rel="stylesheet">
+
   <style>
     :root{
-      --bg:#0b0b0e;
-      --panel:#121318;
-      --input:#0e1013;
-      --muted:#9aa0a6;
-      --text:#e6e9ef;
-      --accent:#ff7a1a;
-      --accent-2:#2b2f36;
-      --border:#2a2f36;
-      --bubble-user:#22303a;
-      --bubble-assistant:#16202a;
-      --shadow:0 20px 60px rgba(0,0,0,.45);
+      --bg:#0b0c10; --panel:#12141a; --muted:#9aa0a6; --text:#e6e9ef;
+      --accent:#ff7a1a; --accent-2:#222833; --ok:#22c55e; --err:#ef4444;
+      --border:#2a2f36; --bubble-me:#1f2a36; --bubble-bot:#13202b;
     }
-    *{box-sizing:border-box}
-    html,body{height:100%}
-    body{
-      margin:0; overflow:hidden;
-      background:radial-gradient(1000px 600px at 50% -200px, #1a1c22 10%, #0b0b0e 55%) fixed;
-      color:var(--text);
-      font-family:'Montserrat',system-ui,Segoe UI,Roboto,sans-serif;
-    }
+    /* Make the page a fixed-height layout and give the chat its own scroll */
+    html, body { height: 100%; }
+    body { overflow: hidden; }  /* stop the whole page from scrolling */
 
-    /* Page grid: header / hint / chat (scrolls) / composer / footer */
+    /* Wrap everything inside a container with class "page" (see HTML note below) */
     .page{
-      height:100%;
-      display:grid;
-      grid-template-rows:auto auto 1fr auto auto;
-      gap:12px;
-      padding:16px clamp(10px,2.8vw,28px);
+      height: 100%;
+      display: grid;
+      grid-template-rows: auto        /* top controls / logo */
+                          auto        /* little tip/status row (optional) */
+                          1fr         /* chat log (scrolls) */
+                          auto        /* composer row */
+                          auto;       /* footer */
+      gap: 12px;
     }
 
-    /* Top bar */
-    .top{
-      display:flex; align-items:center; gap:14px; flex-wrap:wrap;
-      justify-content:space-between;
-    }
-    .left, .right{display:flex; align-items:center; gap:12px; flex-wrap:wrap}
-
-    .btn{
-      border:0; cursor:pointer; font-weight:800; letter-spacing:.3px;
-      padding:14px 22px; border-radius:999px; transition:.15s transform, .15s opacity;
-      background:var(--accent); color:white; box-shadow:var(--shadow);
-    }
-    .btn:active{transform:translateY(1px)}
-    .btn.secondary{background:var(--accent-2)}
-
-    .pill{
-      padding:10px 16px; border-radius:999px;
-      background:#1b2028; color:#ddd; border:1px solid var(--border);
-      font-weight:700;
-    }
-
-    .logo{height:44px; display:block}
-
-    /* Hint row */
-    .hint{
-      color:var(--muted);
-      border:1px dashed var(--border);
-      border-radius:10px;
-      padding:10px 12px;
-      background:rgba(255,255,255,.03);
-      font-size:14px;
-    }
-
-    /* CHAT LOG (scrolls) */
+    /* The chat log itself now scrolls */
     #log{
-      min-height:0;                 /* allow grid child to shrink */
-      overflow-y:auto;              /* <— internal scroll */
-      overscroll-behavior:contain;
-      scroll-behavior:smooth;
-      border:1px solid var(--border);
-      border-radius:14px;
-      background:var(--input);
-      padding:16px;
-      box-shadow:inset 0 0 0 1px rgba(255,255,255,.02);
+      min-height: 0;            /* critical: allow the grid child to shrink */
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      scroll-behavior: smooth;
+      border: 1px solid var(--border);
+      background: var(--input);
+      border-radius: 12px;
+      padding: 16px;
     }
-    #log::-webkit-scrollbar{ width:10px }
-    #log::-webkit-scrollbar-thumb{ background:#38414a; border-radius:10px }
-    #log::-webkit-scrollbar-track{ background:transparent }
-    
+
+    /* Optional nicer scrollbar */
+    #log::-webkit-scrollbar{ width: 10px; }
+    #log::-webkit-scrollbar-thumb{ background: #38414a; border-radius: 10px; }
+    #log::-webkit-scrollbar-track{ background: transparent; }
+
     *{box-sizing:border-box}
     html,body{height:100%}
     body{
