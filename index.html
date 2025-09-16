@@ -109,15 +109,33 @@
 
     // ----------------------- TTS (Emily preferred) -----------------------
     let voice = null;
+    const FORCE_VOICE_NAME = '';   // <-- set to a female voice name to hard-lock it
+    const FEMALE_VOICE_HINTS = [
+      'Microsoft Emily', 'Emily', 'Microsoft Zira', 'Zira',
+      'Samantha', 'Victoria', 'Serena', 'Moira', 'Tessa', 'Karen', 'Kate', 'Susan',
+      'Google UK English Female', 'Google US English',
+      'Wavenet-F', 'Neural2-F' // some browsers/vendors use these patterns
+    ];
+
     function chooseVoice(){
       const voices = window.speechSynthesis.getVoices() || [];
       voice = null;
-      for (const v of voices){
-        if (/Microsoft Emily Online \(Natural\)/i.test(v.name)){ voice = v; break; }
+
+      // 1) Hard lock by exact name if provided
+      if (FORCE_VOICE_NAME) {
+        voice = voices.find(v => v.name.includes(FORCE_VOICE_NAME)) || null;
       }
-      if (!voice){
-        voice = voices.find(v=>/Microsoft|Google US English|Samantha|Daniel|Serena/i.test(v.name)) || voices[0] || null;
+
+      // 2) Prefer English female-ish names
+      if (!voice) {
+        const en = voices.filter(v => /^en[-_]/i.test(v.lang));
+        voice = en.find(v =>
+          FEMALE_VOICE_HINTS.some(h => v.name.toLowerCase().includes(h.toLowerCase()))
+        ) || null;
       }
+
+      // 3) Fallback: any English voice, then any voice
+      if (!voice) voice = voices.find(v => /^en[-_]/i.test(v.lang)) || voices[0] || null;
     }
     window.speechSynthesis.onvoiceschanged = chooseVoice;
     chooseVoice();
