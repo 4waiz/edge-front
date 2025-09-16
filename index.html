@@ -13,39 +13,6 @@
       --accent:#ff7a1a; --accent-2:#222833; --ok:#22c55e; --err:#ef4444;
       --border:#2a2f36; --bubble-me:#1f2a36; --bubble-bot:#13202b;
     }
-    /* Make the page a fixed-height layout and give the chat its own scroll */
-    html, body { height: 100%; }
-    body { overflow: hidden; }  /* stop the whole page from scrolling */
-
-    /* Wrap everything inside a container with class "page" (see HTML note below) */
-    .page{
-      height: 100%;
-      display: grid;
-      grid-template-rows: auto        /* top controls / logo */
-                          auto        /* little tip/status row (optional) */
-                          1fr         /* chat log (scrolls) */
-                          auto        /* composer row */
-                          auto;       /* footer */
-      gap: 12px;
-    }
-
-    /* The chat log itself now scrolls */
-    #log{
-      min-height: 0;            /* critical: allow the grid child to shrink */
-      overflow-y: auto;
-      overscroll-behavior: contain;
-      scroll-behavior: smooth;
-      border: 1px solid var(--border);
-      background: var(--input);
-      border-radius: 12px;
-      padding: 16px;
-    }
-
-    /* Optional nicer scrollbar */
-    #log::-webkit-scrollbar{ width: 10px; }
-    #log::-webkit-scrollbar-thumb{ background: #38414a; border-radius: 10px; }
-    #log::-webkit-scrollbar-track{ background: transparent; }
-
     *{box-sizing:border-box}
     html,body{height:100%}
     body{
