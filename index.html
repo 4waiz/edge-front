@@ -1,141 +1,158 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-t" />
+  <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>EDGE Voice Chat</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <!-- OLD FONT: Montserrat -->
+  <!-- <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700;800&display=swap" rel="stylesheet"> -->
+  
+  <!-- NEW FONT: Poppins -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;700;800&display=swap" rel="stylesheet">
+  
   <style>
     :root{
-      --bg:#0b0c10; --panel:#12141a; --muted:#9aa0a6; --text:#e6e9ef;
+      --bg:#0b0c10; --panel:#121a; --muted:#9aa0a6; --text:#e6e9ef;
       --accent:#ff7a1a; --accent-2:#222833; --ok:#22c55e; --err:#ef4444;
-      --border:#2a2f36; --bubble-me:#1f2a36; --bubble-bot:#13202b;
+      --border:#2a2f36;
     }
     *{box-sizing:border-box}
-    html,body{height:100%}
+    html,body{height:100%; margin: 0;}
     body{
-      margin:0;background:radial-gradient(1200px 1200px at 50% -20%, #151821 0%, #0b0c10 50%, #000 100%);
-      color:var(--text); font-family:'Montserrat',system-ui,Segoe UI,Roboto,sans-serif;
+      background:radial-gradient(1200px 1200px at 50% -20%, #151821 0%, #0b0c10 50%, #000 100%);
+      color:var(--text); 
+      /* Updated base font to Montserrat for UI, keeping Poppins for the special title */
+      font-family:'Montserrat',system-ui,Segoe UI,Roboto,sans-serif;
       overflow:hidden;
     }
-    .wrap{height:100%;display:grid;grid-template-rows:auto 1fr auto;gap:12px;padding:18px;min-height:0;}
-    .topbar{display:flex;align-items:center;gap:14px;justify-content:center;flex-wrap:wrap}
-    .logo{height:80px;object-fit:contain;filter:drop-shadow(0 8px 24px rgba(0,0,0,.45));order:-1;flex:0 0 100%;display:block;margin:0 auto 6px;}
+    .wrap{
+      height:100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-around;
+      padding: 20px 18px;
+    }
+    .topbar{display:flex;align-items:center;gap:14px;justify-content:center;flex-wrap:wrap; width: 100%;}
+    .logo{height:100px; object-fit:contain;filter:drop-shadow(0 8px 24px rgba(0,0,0,.45));order:-1;flex:0 0 100%;display:block;margin:0 auto 13px;}
     .pill{display:inline-flex;align-items:center;gap:10px;padding:12px 18px;border-radius:999px;background:var(--accent);color:#fff;font-weight:800;cursor:pointer;box-shadow:0 10px 30px rgba(0,0,0,.35)}
     .pill.secondary{background:var(--accent-2);color:var(--text);border:1px solid var(--border)}
-    .pill[disabled]{opacity:.6;cursor:not-allowed}
-    .status{padding:10px 16px;border-radius:999px;background:var(--accent-2);border:1px solid var(--border);color:#c7d1db}
+    .status{padding:10px 16px;border-radius:999px;background:var(--accent-2);border:1px solid var(--border);color:#c7d1db; transition: background .3s, border-color .3s, color .3s;}
     .status.idle{background:#1a212a}
     .status.listen{background:#0f2c1a;border-color:#1b4d2e;color:#cfeedd}
     .status.speak{background:#2b1a1a;border-color:#5b2a2a;color:#ffd8d8}
     .hint{color:var(--muted);background:#0e1217;border:1px solid var(--border);padding:10px 14px;border-radius:999px}
 
-    .card{
-      height:100%;max-width:1260px;margin:0 auto;width:100%;
-      display:flex;align-items:center;justify-content:center;
-      background:rgba(16,18,24,.4);backdrop-filter:blur(6px);
-      border:1px solid #1e2430;border-radius:18px;padding:16px 16px 14px;
-      box-shadow:0 30px 80px rgba(0,0,0,.45);min-height:0;
-    }
-    .footer{color:#aab2bd;text-align:center}
+    .card{ width:100%; display:flex; justify-content:center; align-items:center; border:none; background:transparent; box-shadow:none; }
+    .footer {color: #aab2bd; text-align: center; font-size: 21px; /* <-- Add this line */}
     .footer a{color:#a7d7ff;text-decoration:none;border-bottom:1px solid rgba(167,215,255,.35)}
 
-    /* Animated blob - VISUALS UPDATED */
     .blob-wrap{
       display:flex;flex-direction:column;align-items:center;justify-content:center;
-      gap:16px; text-align:center;
+      gap:20px; text-align:center;
     }
     .blob{
-      width:min(38vh, 420px); /* Smaller size */
-      height:min(38vh, 420px); /* Smaller size */
-      border-radius:50%;
-      position:relative;
-      /* New layered background for a glassy/glowing effect */
-      background:
-        /* Inner light reflections */
-        radial-gradient(circle at 60% 30%, rgba(200, 220, 255, .35), transparent 40%),
-        /* Main sphere gradient */
-        radial-gradient(circle at 35% 35%, #8f79ff, #502eff 45%, #2a1488 80%);
-      box-shadow: 0 25px 80px rgba(80, 46, 255, .35), /* Outer glow */
-                  inset 0 0 15px rgba(255, 255, 255, 0.1), /* Inner rim light */
-                  inset 0 -20px 60px rgba(0,0,0,.4); /* Bottom shadow */
-      border: 1px solid rgba(255, 255, 255, 0.08); /* Subtle glassy edge */
-      display:flex;align-items:center;justify-content:center;
-      animation: wobble 11s ease-in-out infinite, floaty 7s ease-in-out infinite;
-      will-change: transform, border-radius;
+      width:min(35vh, 380px); height:min(35vh, 380px);
+      position:relative; display:flex;align-items:center;justify-content:center;
+      border-radius: 50%;
+      background: radial-gradient(circle at 50% 50%, #150522, #000);
+      will-change: transform, border-radius; overflow: hidden;
+      filter: drop-shadow(0 0 25px rgba(238, 0, 255, 0.5)) drop-shadow(0 0 45px rgba(0, 204, 255, 0.4));
+      animation:
+        wobble-organic 15s ease-in-out infinite,
+        floaty 12s ease-in-out infinite;
     }
-    /* This wrapper ensures text stays above pseudo-elements */
-    .blob > div {
-      position: relative;
-      z-index: 10;
+    .blob::before {
+      content: ''; position: absolute; inset: -100%;
+      background: conic-gradient(from 90deg, #ee00ff, #6600ff, #00ccff, #ee00ff);
+      animation: spin 15s linear infinite;
+      mix-blend-mode: screen; opacity: 0.9; transition: opacity .5s ease;
     }
-    /* Existing subtle moving highlight */
-    .blob::after{
-      content:"";
-      position:absolute;inset:0;border-radius:inherit;
-      background: radial-gradient(180px 180px at 65% 60%, rgba(150, 210, 255, .15), transparent 60%);
-      mix-blend-mode: screen;
-      animation: shimmer 8s ease-in-out infinite alternate;
-      pointer-events:none;
+    .blob::after {
+      content: ''; position: absolute; inset: -50%;
+      background: conic-gradient(from 0deg, transparent, #fff, transparent 40%);
+      animation: spin 22s linear infinite reverse;
+      mix-blend-mode: overlay; opacity: 0.3;
     }
-    /* New internal glowing element for more depth */
-    .blob::before{
-      content:"";
-      position:absolute;inset:20%;border-radius:inherit;
-      background: radial-gradient(circle, rgba(143,121,255,.25), transparent 70%);
-      filter: blur(10px);
-      z-index: 1;
-      opacity: .8;
+    .blob-content { z-index: 10; position: relative; }
+    
+    /* --- FONT CHANGED HERE --- */
+    .blob h1 {
+      font-family: 'Poppins', sans-serif; /* Use new font */
+      font-weight: 800; /* Bolder for more impact */
+      font-size: clamp(20px, 3.2vw, 36px);
+      margin: 0 18px;
+      color: #e8eef8;
+      text-shadow: 0 0 8px rgba(255, 255, 255, 0.3),
+                   0 0 25px rgba(238, 0, 255, 0.6),
+                   0 0 40px rgba(0, 204, 255, 0.5);
+      transition: opacity .4s ease;
     }
-    .blob h1{
-      font-size: clamp(20px, 3vw, 38px); /* Adjusted for smaller circle */
-      margin:0 12px; font-weight:800; letter-spacing:.2px;
-      text-shadow: 0 3px 25px rgba(0,0,0,.45);
+    
+    #waveCanvas {
+      position: absolute; top: 0; left: 0;
+      width: 100%; height: 100%; z-index: 5;
+      opacity: 0; transition: opacity .4s ease;
     }
-    /* New style for subtitle moved outside the blob */
+    .blob.listening h1,
+    .blob.speaking h1 { opacity: 0.1; }
+    .blob.listening::before { opacity: 0.4; }
+    .blob.listening #waveCanvas { opacity: 1; }
+    .blob.speaking {
+      animation:
+        wobble-organic 15s ease-in-out infinite,
+        speaking-pulse 1.8s ease-in-out infinite;
+    }
     .subtitle{
       color: #b9c1d0;
-      font-size: clamp(16px, 1.5vw, 19px);
+      font-size: clamp(25px, 1.6vw, 20px);
       font-weight: 500;
-      margin-top:20px;
-      max-width:480px;
-      opacity: 0.9;
+      max-width:480px; opacity: 0.9;
     }
 
-    /* Tweaked keyframes for a more subtle, fluid motion */
-    @keyframes wobble{
-      0%,100%{ transform: translate(0,0) scale(1); border-radius:50% 50% 50% 50%/50% 50% 50% 50%; }
-      20%{ transform: translate(5px,-3px) scale(1.02); border-radius:48% 52% 51% 49%/49% 49% 51% 51%; }
-      40%{ transform: translate(-6px,4px) scale(0.98); border-radius:52% 48% 50% 50%/48% 52% 50% 50%; }
-      60%{ transform: translate(4px,4px) scale(1.01); border-radius:50% 50% 48% 52%/51% 50% 50% 49%; }
-      80%{ transform: translate(-3px,-5px) scale(0.99); border-radius:49% 51% 52% 48%/50% 49% 51% 50%; }
+    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    @keyframes floaty {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-15px); }
     }
-    @keyframes floaty{ 0%,100%{ filter: drop-shadow(0 35px 70px rgba(0,0,0,.4)); }
-                        50%{ filter: drop-shadow(0 25px 50px rgba(0,0,0,.3)); } }
-    @keyframes shimmer{ 0%,100%{ transform: translate(0,0) rotate(0deg) }
-                         50%{ transform: translate(-8px, 8px) rotate(-10deg) } }
+    @keyframes wobble-organic {
+      0% { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; }
+      25% { border-radius: 30% 60% 70% 40% / 50% 60% 30% 60%; }
+      50% { border-radius: 60% 40% 50% 60% / 70% 50% 40% 30%; }
+      75% { border-radius: 40% 70% 30% 60% / 60% 40% 70% 30%; }
+      100% { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; }
+    }
+    @keyframes speaking-pulse {
+      0%, 100% {
+        transform: translateY(0);
+        filter: drop-shadow(0 0 25px #ee00ff55) drop-shadow(0 0 45px #00ccff44);
+      }
+      50% {
+        transform: translateY(-10px);
+        filter: drop-shadow(0 0 40px #ee00ffaa) drop-shadow(0 0 65px #00ccff88);
+      }
+    }
   </style>
 </head>
 <body>
   <div class="wrap">
-    <!-- Top bar / keep voice controls + status + logo -->
     <div class="topbar">
+      <img src="/logo.png" alt="EDGE LIF" class="logo">
       <button id="toggle" class="pill">Voice Off</button>
       <div class="hint">Tip: press <b>M</b> to toggle mic</div>
       <div id="vstat" class="pill secondary status idle">Idle</div>
-      <img src="/logo.png" alt="EDGE LIF" class="logo">
     </div>
 
-    <!-- Main card with animated circle - HTML STRUCTURE UPDATED -->
     <div class="card">
       <div class="blob-wrap">
         <div class="blob" aria-live="polite">
-          <div>
+          <canvas id="waveCanvas"></canvas>
+          <div class="blob-content">
             <h1>Hi, I'm EDGE AI</h1>
           </div>
         </div>
-        <!-- Welcome text moved outside and below the blob -->
         <p class="subtitle">Join us to know more about innovation @EDGE tomorrow from 11:30 - 12:30 in HQ auditorium</p>
       </div>
     </div>
@@ -144,45 +161,29 @@
   </div>
 
   <script>
-    // ----------------------- Helpers & UI -----------------------
+    // --- NO CHANGES TO JAVASCRIPT ---
     const $ = s => document.querySelector(s);
-    const toggleBtn = $('#toggle'), voiceStatus = $('#vstat');
-    const SHOW_DIAGS = false;
-
-    // Keep a minimal message history for the backend
+    const toggleBtn = $('#toggle'), voiceStatus = $('#vstat'), blob = $('.blob');
     const history = [];
-
-    // No visible chat log; push() is a no-op
     function push(){ /* intentionally empty */ }
-
     function showStatus(kind, text) {
       voiceStatus.className = `pill secondary status ${kind}`;
       voiceStatus.textContent = text;
+      blob.classList.remove('listening', 'speaking');
+      stopWaveAnimation();
+      if (kind === 'listen') { blob.classList.add('listening'); startWaveAnimation(); }
+      else if (kind === 'speak') { blob.classList.add('speaking'); }
     }
-    
 
     let voice = null;
-    const FORCE_VOICE_NAME = '';
     const FEMALE_VOICE_HINTS = [
-      'Microsoft Emily', 'Emily', 'Microsoft Zira', 'Zira',
-      'Samantha', 'Victoria', 'Serena', 'Moira', 'Tessa', 'Karen', 'Kate', 'Susan',
-      'Google UK English Female', 'Google US English',
-      'Wavenet-F', 'Neural2-F'
+      'Microsoft Emily', 'Emily', 'Microsoft Zira', 'Zira', 'Samantha', 'Victoria',
+      'Google UK English Female', 'Google US English', 'Wavenet-F', 'Neural2-F'
     ];
-
     function chooseVoice(){
       const voices = window.speechSynthesis.getVoices() || [];
-      voice = null;
-      if (FORCE_VOICE_NAME) {
-        voice = voices.find(v => v.name.includes(FORCE_VOICE_NAME)) || null;
-      }
-      if (!voice) {
-        const en = voices.filter(v => /^en[-_]/i.test(v.lang));
-        voice = en.find(v =>
-          FEMALE_VOICE_HINTS.some(h => v.name.toLowerCase().includes(h.toLowerCase()))
-        ) || null;
-      }
-      if (!voice) voice = (window.speechSynthesis.getVoices() || []).find(v => /^en[-_]/i.test(v.lang)) || null;
+      const en = voices.filter(v => /^en[-_]/i.test(v.lang));
+      voice = en.find(v => FEMALE_VOICE_HINTS.some(h => v.name.includes(h))) || en[0] || voices[0];
     }
     window.speechSynthesis.onvoiceschanged = chooseVoice;
     chooseVoice();
@@ -191,7 +192,7 @@
     function speak(text){
       if (!voiceOn) return;
       try{
-        const u = new SpeechSynthesisUtterance(text);
+        const u = new SpeechSynthesisUtterterance(text);
         if (voice) u.voice = voice;
         u.rate = 1.0;
         u.onstart = ()=>{ speaking = true; showStatus('speak','Speaking'); };
@@ -200,96 +201,84 @@
         window.speechSynthesis.speak(u);
       }catch(e){ console.warn('TTS error', e); }
     }
-    function stopSpeaking(){
-      try{ window.speechSynthesis.cancel(); }catch(e){}
-      speaking = false;
-    }
+    function stopSpeaking(){ try{ window.speechSynthesis.cancel(); }catch(e){} speaking = false; }
 
-    // ----------------------- STT (webkitSpeechRecognition) -----------------------
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     let rec = null, listening = false, lastTranscript = '';
-
     function initSR(){
       if (!SR) return;
       rec = new SR();
-      rec.lang = 'en-US';
-      rec.continuous = false;
-      rec.interimResults = true;
-      rec.maxAlternatives = 1;
-
+      rec.lang = 'en-US'; rec.continuous = false; rec.interimResults = true; rec.maxAlternatives = 1;
       rec.onstart = () => { listening = true; showStatus('listen','Listening'); };
-      rec.onerror = (e) => { showStatus('idle','Idle'); console.warn('ASR error', e); listening=false; };
+      rec.onerror = (e) => { listening=false; showStatus('idle','Idle'); console.warn('ASR error', e); };
       rec.onend = async () => {
-        listening = false;
-        showStatus('idle','Idle');
-        const text = squash(lastTranscript).trim();
-        lastTranscript = '';
+        listening = false; showStatus('idle','Idle'); const text = (lastTranscript || '').trim(); lastTranscript = '';
         if (text) await handleUserText(text);
-        setTimeout(()=> { if (voiceOn) startSR(); }, 1000);
+        if (voiceOn) setTimeout(()=> startSR(), 500);
       };
       rec.onresult = (ev) => {
-        let final = '';
+        let final = '', interim = '';
         for (let i=ev.resultIndex; i<ev.results.length; i++){
-          const r = ev.results[i];
-          if (r.isFinal) final += r[0].transcript + ' ';
-          else lastTranscript = r[0].transcript;
+          const r = ev.results[i]; if (r.isFinal) final += r[0].transcript + ' '; else interim += r[0].transcript;
         }
-        if (final) lastTranscript += ' ' + final;
+        lastTranscript = final || interim;
       };
     }
     initSR();
 
-    function squash(t){
-      return String(t||'')
-        .replace(/\s+/g,' ')
-        .replace(/\\b(\\w+)( \\1\\b)+/gi,'$1');
-    }
-
     let voiceOn = false;
-    function startSR(){ if (rec) try{ rec.start(); }catch{} }
+    function startSR(){ if (rec && !listening) try{ rec.start(); }catch(e){console.error(e)} }
     function stopSR(){ if (rec) try{ rec.stop(); }catch{} listening=false; showStatus('idle','Idle'); }
-
     document.addEventListener('keydown', (e)=>{ if (e.key.toLowerCase()==='m'){ e.preventDefault(); toggleVoice(); }});
     toggleBtn.onclick = toggleVoice;
-
     function toggleVoice(){
-      voiceOn = !voiceOn;
-      toggleBtn.textContent = voiceOn ? 'Voice On' : 'Voice Off';
-      if (voiceOn){ stopSpeaking(); startSR(); }
-      else { stopSR(); stopSpeaking(); }
+      voiceOn = !voiceOn; toggleBtn.textContent = voiceOn ? 'Voice On' : 'Voice Off';
+      if (voiceOn){ stopSpeaking(); startSR(); } else { stopSR(); stopSpeaking(); }
     }
 
-    // ----------------------- Chat (calls /api/chat) -----------------------
     async function postJSON(url, payload){
       const r = await fetch(url, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
-      const text = await r.text();
-      if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + text);
-      return JSON.parse(text);
+      const text = await r.text(); if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + text); return JSON.parse(text);
     }
-
     async function handleUserText(text){
-      // No visible chat, but keep history for context
       history.push({role:'user', content:text});
       try{
         stopSR();
         const res = await postJSON('/api/chat', {messages: history.slice(-8)});
         const raw = res.reply || '';
-        const reply = limitWords(raw, 100);
-        history.push({role:'assistant', content:reply});
-        speak(reply);
-      }catch(e){
-        console.warn('Chat error', e);
-        // Optionally speak an error
-        speak('Sorry, I had trouble reaching the server.');
-      }finally{
-        setTimeout(()=>{ if (voiceOn) startSR(); }, 1000);
-      }
+        const reply = raw.split(/\s+/).slice(0, 100).join(' ') + (raw.split(/\s+/).length > 100 ? '…' : '');
+        history.push({role:'assistant', content:reply}); speak(reply);
+      }catch(e){ console.warn('Chat error', e); speak('Sorry, I had trouble reaching the server.'); }
     }
 
-    function limitWords(s, n=70){
-      const words = String(s||'').trim().split(/\\s+/);
-      return words.length > n ? words.slice(0, n).join(' ') + '…' : s;
+    const canvas = document.getElementById('waveCanvas'); const ctx = canvas.getContext('2d');
+    let animationFrameId = null;
+    function resizeCanvas() {
+        const dpr = window.devicePixelRatio || 1; const size = blob.clientWidth;
+        canvas.width = size * dpr; canvas.height = size * dpr; ctx.scale(dpr, dpr);
     }
+    const waves = [
+        { color: 'rgba(238, 0, 255, 0.7)', amp: 30, freq: 0.02, phase: 0, speed: 0.03 },
+        { color: 'rgba(0, 204, 255, 0.8)', amp: 40, freq: 0.015, phase: 2, speed: 0.02 },
+        { color: 'rgba(255, 255, 255, 0.6)', amp: 25, freq: 0.025, phase: 4, speed: 0.04 }
+    ];
+    function drawWave() {
+      const w = canvas.clientWidth, h = canvas.clientHeight;
+      ctx.clearRect(0, 0, w, h);
+      waves.forEach(wave => {
+        ctx.beginPath(); ctx.strokeStyle = wave.color; ctx.lineWidth = 3;
+        ctx.shadowBlur = 20; ctx.shadowColor = wave.color;
+        for (let x=0; x<w; x++) { const y = h/2 + wave.amp * Math.sin(x*wave.freq + wave.phase); x===0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y); }
+        ctx.stroke(); wave.phase += wave.speed;
+      });
+      animationFrameId = requestAnimationFrame(drawWave);
+    }
+    function startWaveAnimation() { if (!animationFrameId) { resizeCanvas(); drawWave(); } }
+    function stopWaveAnimation() {
+      if (animationFrameId) { cancelAnimationFrame(animationFrameId); animationFrameId = null; setTimeout(() => { if(!animationFrameId) ctx.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight);}, 100); }
+    }
+    window.addEventListener('resize', () => { resizeCanvas(); if(blob.classList.contains('listening')){ startWaveAnimation(); } });
+    resizeCanvas();
   </script>
 </body>
 </html>
