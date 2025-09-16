@@ -6,7 +6,6 @@
   <title>EDGE Voice Chat</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;800&display=swap" rel="stylesheet">
-
   <style>
     :root{
       --bg:#0b0c10; --panel:#12141a; --muted:#9aa0a6; --text:#e6e9ef;
@@ -18,11 +17,11 @@
     body{
       margin:0;background:radial-gradient(1200px 1200px at 50% -20%, #151821 0%, #0b0c10 50%, #000 100%);
       color:var(--text); font-family:'Montserrat',system-ui,Segoe UI,Roboto,sans-serif;
-      overflow:hidden;  /* page never scrolls */
+      overflow:hidden; /* page never scrolls */
     }
     .wrap{height:100%;display:grid;grid-template-rows:auto 1fr auto;gap:12px;padding:18px}
     .topbar{display:flex;align-items:center;gap:14px;justify-content:center}
-    .logo{height:56px;object-fit:contain;filter:drop-shadow(0 8px 24px rgba(0,0,0,.45))}
+    .logo{height:80px;object-fit:contain;filter:drop-shadow(0 8px 24px rgba(0,0,0,.45))}
     .pill{display:inline-flex;align-items:center;gap:10px;padding:12px 18px;border-radius:999px;background:var(--accent);color:#fff;font-weight:800;cursor:pointer;box-shadow:0 10px 30px rgba(0,0,0,.35)}
     .pill.secondary{background:var(--accent-2);color:var(--text);border:1px solid var(--border)}
     .pill[disabled]{opacity:.6;cursor:not-allowed}
@@ -30,11 +29,10 @@
     .status.idle{background:#1a212a}
     .status.listen{background:#0f2c1a;border-color:#1b4d2e;color:#cfeedd}
     .status.speak{background:#2b1a1a;border-color:#5b2a2a;color:#ffd8d8}
-    .rate{display:flex;align-items:center;gap:10px}
-    input[type=range]{accent-color:var(--accent)}
     .hint{color:var(--muted);background:#0e1217;border:1px solid var(--border);padding:10px 14px;border-radius:999px}
 
-    .card{height:100%;max-width:1260px;margin:0 auto;width:100%;
+    .card{
+      height:100%;max-width:1260px;margin:0 auto;width:100%;
       display:grid;grid-template-rows:auto 1fr auto;gap:14px;
       background:rgba(16,18,24,.4);backdrop-filter:blur(6px);
       border:1px solid #1e2430;border-radius:18px;padding:16px 16px 14px;
@@ -59,25 +57,16 @@
     .btn:active{transform:translateY(1px)}
     .footer{color:#aab2bd;text-align:center}
     .footer a{color:#a7d7ff;text-decoration:none;border-bottom:1px solid rgba(167,215,255,.35)}
-    .cb{display:flex;align-items:center;gap:10px}
   </style>
 </head>
 <body>
   <div class="wrap">
     <!-- Top bar -->
     <div class="topbar">
-      <button id="toggle" class="pill">Voice On</button>
-      <div id="vstat" class="pill secondary status idle">Idle</div>
-      <label class="pill secondary cb">
-        <input id="speakCk" type="checkbox" checked>
-        <span>Speak replies</span>
-      </label>
-      <div class="pill secondary rate">
-        <span>Rate</span>
-        <input id="rate" type="range" min="0.7" max="1.4" step="0.05" value="1.0">
-      </div>
-      <img src="/logo.png" alt="EDGE LIF" class="logo">
+      <button id="toggle" class="pill">Voice Off</button>
       <div class="hint">Tip: press <b>M</b> to toggle mic</div>
+      <div id="vstat" class="pill secondary status idle">Idle</div>
+      <img src="/logo.png" alt="EDGE LIF" class="logo">
     </div>
 
     <!-- Main card -->
@@ -99,7 +88,6 @@
     const $ = s => document.querySelector(s);
     const log = $('#log'), input = $('#input'), sendBtn = $('#send');
     const toggleBtn = $('#toggle'), voiceStatus = $('#vstat');
-    const speakCk = $('#speakCk'), rate = $('#rate');
 
     function push(role, text, cls=''){
       const div = document.createElement('div');
@@ -113,7 +101,7 @@
       voiceStatus.textContent = text;
     }
 
-    const history = []; // chat history
+    const history = [];
     function limitWords(s, n=100){
       const words = String(s||'').trim().split(/\s+/);
       return words.length > n ? words.slice(0, n).join(' ') + '…' : s;
@@ -124,11 +112,9 @@
     function chooseVoice(){
       const voices = window.speechSynthesis.getVoices() || [];
       voice = null;
-      // Prefer Emily if present
       for (const v of voices){
         if (/Microsoft Emily Online \(Natural\)/i.test(v.name)){ voice = v; break; }
       }
-      // sensible fallbacks
       if (!voice){
         voice = voices.find(v=>/Microsoft|Google US English|Samantha|Daniel|Serena/i.test(v.name)) || voices[0] || null;
       }
@@ -137,17 +123,15 @@
     chooseVoice();
 
     let speaking = false;
-    const controller = new AbortController(); // to stop queued speech
-
     function speak(text){
-      if (!speakCk.checked) return;
+      if (!voiceOn) return;               // speak only when Voice is On
       try{
         const u = new SpeechSynthesisUtterance(text);
         if (voice) u.voice = voice;
-        u.rate = parseFloat(rate.value) || 1.0;
+        u.rate = 1.0;                      // normal rate
         u.onstart = ()=>{ speaking = true; showStatus('speak','Speaking'); };
         u.onend   = ()=>{ speaking = false; showStatus(listening?'listen':'idle', listening?'Listening':'Idle'); };
-        window.speechSynthesis.cancel(); // cancel anything pending
+        window.speechSynthesis.cancel();   // clear any queue
         window.speechSynthesis.speak(u);
       }catch(e){ console.warn('TTS error', e); }
     }
@@ -158,13 +142,13 @@
 
     // ----------------------- STT (webkitSpeechRecognition) -----------------------
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    let rec = null, listening = false, lastTranscript = '', cooldown = false;
+    let rec = null, listening = false, lastTranscript = '';
 
     function initSR(){
       if (!SR) return;
       rec = new SR();
       rec.lang = 'en-US';
-      rec.continuous = false; // end on silence
+      rec.continuous = false;
       rec.interimResults = true;
       rec.maxAlternatives = 1;
 
@@ -175,10 +159,7 @@
         showStatus('idle','Idle');
         const text = squash(lastTranscript).trim();
         lastTranscript = '';
-        if (text) {
-          await handleUserText(text);
-        }
-        // small cooldown to avoid fast re-trigger
+        if (text) await handleUserText(text);
         setTimeout(()=> { if (voiceOn) startSR(); }, 1000);
       };
       rec.onresult = (ev) => {
@@ -193,7 +174,6 @@
     }
     initSR();
 
-    // collapse obvious repetitions from partial results
     function squash(t){
       return String(t||'')
         .replace(/\s+/g,' ')
@@ -201,23 +181,12 @@
     }
 
     let voiceOn = false;
-    function startSR(){
-      if (!rec) return;
-      try{ rec.start(); }catch{} // start can throw if already started
-    }
-    function stopSR(){
-      if (!rec) return;
-      try{ rec.stop(); }catch{}
-      listening = false;
-      showStatus('idle','Idle');
-    }
+    function startSR(){ if (rec) try{ rec.start(); }catch{} }
+    function stopSR(){ if (rec) try{ rec.stop(); }catch{} listening=false; showStatus('idle','Idle'); }
 
-    // interrupt speaking when user starts talking again
-    document.addEventListener('keydown', (e)=>{
-      if (e.key.toLowerCase()==='m'){ e.preventDefault(); toggleVoice(); }
-    });
-
+    document.addEventListener('keydown', (e)=>{ if (e.key.toLowerCase()==='m'){ e.preventDefault(); toggleVoice(); }});
     toggleBtn.onclick = toggleVoice;
+
     function toggleVoice(){
       voiceOn = !voiceOn;
       toggleBtn.textContent = voiceOn ? 'Voice On' : 'Voice Off';
@@ -237,7 +206,6 @@
       push('user', text);
       history.push({role:'user', content:text});
       try{
-        // stop listening while we ask the model
         stopSR();
         const res = await postJSON('/api/chat', {messages: history.slice(-8)});
         const raw = res.reply || '';
