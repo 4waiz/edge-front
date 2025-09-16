@@ -1,364 +1,99 @@
 <!doctype html>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>EDGE Voice</title>
-<link rel="icon" href="/logo.png" />
-<style>
-  :root{
-    --bg:#0b0b0e; --panel:#0f1116; --muted:#9aa0a6; --text:#e6e9ef;
-    --accent:#f97316; --accent2:#00e6ff; --border:#262a33; --input:#0e1013;
-  }
-  *{box-sizing:border-box}
-  body{
-    margin:0;
-    background:
-      radial-gradient(1200px 800px at 80% -10%, #0a1f31 0%, transparent 60%),
-      radial-gradient(800px 600px at -10% 110%, #25132c 0%, transparent 60%),
-      var(--bg);
-    color:var(--text);
-    font:16px/1.55 system-ui, Segoe UI, Roboto, sans-serif
-  }
-  .wrap{max-width:1000px;margin:28px auto;padding:0 16px}
-  .card{
-    position:relative; background:linear-gradient(180deg,#10131a 0%,#0b0d12 100%);
-    border:1px solid var(--border); border-radius:18px; padding:22px; display:grid; gap:16px;
-    box-shadow:0 20px 70px rgba(0,0,0,.55);
-  }
-  .card:before{
-    content:""; position:absolute; inset:-1px; border-radius:20px; z-index:-1;
-    background:conic-gradient(from 180deg, #0ff, #f60, #6cf, #f60, #0ff);
-    filter:blur(18px) opacity(.25);
-  }
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>EDGE LIF — Voice Chat</title>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#0b0c0f; --panel:#12141a; --muted:#9aa0a6; --text:#e6e9ef;
+      --accent:#f97316; --accent2:#1d232f; --ok:#22c55e; --warn:#eab308; --err:#ef4444;
+      --border:#262a33; --bubble:#1b2430; --bubble2:#22303b; --input:#0f1116;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; font-family:'Montserrat',system-ui,Segoe UI,Roboto,sans-serif;
+      background:radial-gradient(1200px 800px at 80% -50%, rgba(249,115,22,.10), transparent 60%),
+                 radial-gradient(900px 500px at -10% 120%, rgba(34,197,94,.10), transparent 60%),
+                 var(--bg);
+      color:var(--text); overflow:hidden; /* <= no white page scrollbar */
+    }
+    .wrap{height:100%; display:grid; grid-template-rows:auto auto 1fr auto auto; gap:14px; padding:16px 18px 14px}
+    .logo{display:block; height:64px; margin:0 auto 2px; filter:drop-shadow(0 10px 30px rgba(0,0,0,.5))}
+    .controls{display:flex; gap:10px; align-items:center; justify-content:center; flex-wrap:wrap}
+    .badge{
+      font-size:12px; padding:6px 10px; border-radius:999px; border:1px solid var(--border);
+      background:var(--panel); color:var(--muted);
+    }
+    .badge.ok{color:#eaffef;border-color:#214f35;background:linear-gradient(180deg,#173425,#0f1b16)}
+    .badge.speaking{color:#ffefe6;border-color:#5b3116;background:linear-gradient(180deg,#2e170e,#1b110c)}
+    .badge.interrupt{color:#ffeaea;border-color:#6a1d1d;background:linear-gradient(180deg,#3a1616,#1f0e0e)}
+    .pill{
+      border:1px solid var(--border); background:var(--panel); color:var(--text);
+      padding:10px 14px; border-radius:12px; display:flex; align-items:center; gap:10px;
+    }
+    .switch{display:flex; align-items:center; gap:8px; padding:8px 12px; border-radius:10px; border:1px solid var(--border); background:var(--panel)}
+    .switch input{width:18px;height:18px}
+    .range{display:flex; align-items:center; gap:10px; border:1px solid var(--border); padding:8px 12px; border-radius:10px; background:var(--panel)}
+    .range input{width:160px}
+    .chat{
+      background:var(--panel); border:1px solid var(--border); border-radius:14px;
+      padding:12px; min-height:0; /* important for nested scroll */
+      display:grid; grid-template-rows:1fr; overflow:hidden;
+    }
+    #log{overflow:auto; padding-right:8px; display:grid; gap:12px; align-content:start}
+    .msg{max-width:80%; border-radius:12px; padding:12px 14px; line-height:1.55; white-space:pre-wrap}
+    .user{justify-self:end; background:var(--bubble2)}
+    .assistant{justify-self:start; background:var(--bubble)}
+    .composer{display:grid; grid-template-columns:1fr auto; gap:12px; margin-top:4px}
+    textarea{
+      width:100%; background:var(--input); color:var(--text);
+      border:1px solid var(--border); border-radius:12px; padding:12px 14px;
+      resize:none; min-height:84px;
+    }
+    button.btn{
+      background:var(--accent); color:white; border:0; border-radius:14px; padding:14px 18px;
+      font-weight:800; cursor:pointer; box-shadow:0 6px 24px rgba(249,115,22,.3);
+    }
+    .footer{color:var(--muted); text-align:center; font-size:12px}
+    .footer a{color:#92c5ff; text-decoration:none}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <img class="logo" src="/logo.png" alt="EDGE LIF" />
 
-  .head{display:flex; justify-content:center; align-items:center; padding:6px 0 8px}
-  .head img{height:112px; width:auto; filter:drop-shadow(0 10px 24px rgba(0,0,0,.45))}
-  @media (max-width:560px){ .head img{height:92px} }
-
-  .toolbar{display:flex; gap:12px; align-items:center; flex-wrap:wrap; justify-content:space-between}
-  .left, .right{display:flex; gap:12px; align-items:center; flex-wrap:wrap}
-  .pill{background:var(--input); border:1px solid var(--border); color:var(--muted);
-        border-radius:999px; padding:8px 12px; display:flex; gap:10px; align-items:center}
-  .pill input[type=range]{accent-color:var(--accent)}
-  .hint{font-size:12px; color:var(--muted)}
-
-  #mic{
-    position:relative; display:flex; align-items:center; gap:10px; cursor:pointer;
-    background:linear-gradient(180deg,#18202a,#141820); color:#fff; border:1px solid #1e2630;
-    padding:10px 16px; border-radius:12px; font-weight:800; letter-spacing:.2px;
-  }
-  #mic .dot{width:12px;height:12px;border-radius:50%;background:#69707a;box-shadow:0 0 0 0 rgba(239,68,68,0)}
-  #mic.on .dot{background:#ef4444; box-shadow:0 0 16px 2px rgba(239,68,68,.65), 0 0 4px 1px #ef4444}
-  #mic .wave{position:absolute; inset:-4px; border-radius:14px; opacity:0; pointer-events:none}
-  #mic.on .wave{animation:pulse 1.6s infinite; background:radial-gradient(closest-side, rgba(239,68,68,.35), transparent)}
-  @keyframes pulse{0%{opacity:.45; transform:scale(.98)} 70%{opacity:.06; transform:scale(1.06)} 100%{opacity:0; transform:scale(1.08)}}
-
-  .log{background:var(--input); border:1px solid var(--border); border-radius:14px; padding:12px; height:52vh; overflow:auto}
-  .msg{max-width:80%; padding:10px 12px; border-radius:12px; margin:10px 0; white-space:pre-wrap}
-  .u{margin-left:auto;background:#24303a}
-  .a{background:#1b2430}
-  .err{background:#3b1d1d;color:#f3caca;border:1px solid #7a2e2e;border-radius:8px;padding:8px 10px;display:none}
-
-  .row{display:grid; grid-template-columns:1fr auto; gap:12px}
-  textarea{background:var(--input); color:var(--text); border:1px solid var(--border); border-radius:12px;
-           padding:12px; resize:none; height:92px}
-  button.send{background:linear-gradient(180deg,#ff8a33,#f97316); color:#fff; border:0; border-radius:12px;
-              padding:0 18px; font-weight:800; height:92px; cursor:pointer}
-  button.send:disabled{opacity:.6; cursor:not-allowed}
-
-  .foot{margin-top:4px;text-align:center;color:var(--muted)}
-  .foot a{color:var(--text); text-decoration:none; border-bottom:1px dotted var(--accent)}
-  .foot a:hover{color:var(--accent)}
-  :root{
-    --bg:#0b0b0e;--panel:#15161a;--muted:#9aa0a6;--text:#e6e9ef;
-    --accent:#f97316;--accent-2:#2b2f36;--ok:#22c55e;--err:#ef4444;
-    --border:#2a2f36;--input:#0e1013
-  }
-
-  *{box-sizing:border-box}
-  html,body{
-    height:100%;
-    margin:0;
-    background:var(--bg);
-    color:var(--text);
-    /* hide page scrollbar (one-page app) */
-    overflow:hidden;                 /* core */
-    -ms-overflow-style:none;         /* IE/Edge legacy */
-    scrollbar-width:none;            /* Firefox */
-  }
-  body::-webkit-scrollbar{display:none} /* Chrome/Safari */
-
-  /* Layout: fill the viewport, no external scroll */
-  .wrap{
-    height:100dvh;                   /* better on mobile, falls back to 100vh */
-    height:100vh;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    padding:16px;
-  }
-  .card{
-    width:min(1100px,100%);
-    height:100%;                     /* fill the viewport area */
-    display:flex;
-    flex-direction:column;
-    background:var(--panel);
-    border:1px solid var(--border);
-    border-radius:16px;
-    box-shadow:0 30px 80px rgba(0,0,0,.45);
-    min-height:0;                    /* allow inner areas to shrink */
-  }
-
-  /* header/logo row (if you have one) */
-  .logo{display:block;max-width:260px;margin:6px auto 2px;filter:drop-shadow(0 6px 20px rgba(0,0,0,.35))}
-
-  /* top controls row */
-  .controls{
-    display:flex;gap:12px;align-items:center;flex-wrap:wrap;
-    padding:6px 16px 8px; color:var(--muted);
-  }
-
-  /* Chat area uses ALL remaining space; only log scrolls */
-  .chat{
-    flex:1; min-height:0;                         /* critical: prevents overflow */
-    display:grid; grid-template-rows: 1fr auto;   /* [log] + [composer] */
-    gap:12px; padding:0 16px 16px;
-  }
-
-  /* Messages panel (internal scrolling only) */
-  #log{
-    min-height:0; height:auto; overflow:auto;     /* internal scroll */
-    border-radius:12px; background:var(--input); border:1px solid var(--border);
-    padding:12px; display:grid; gap:12px;
-  }
-
-  /* Pretty (dark) internal scrollbar for the log */
-  #log::-webkit-scrollbar{width:8px}
-  #log::-webkit-scrollbar-thumb{background:var(--border);border-radius:8px}
-  #log{scrollbar-width:thin; scrollbar-color:var(--border) transparent;}
-
-  /* Messages */
-  .msg{padding:10px 14px;border-radius:10px;line-height:1.55;white-space:pre-wrap;max-width:78%}
-  .user{justify-self:end;background:#24303a}
-  .assistant{justify-self:start;background:#1b2430}
-
-  /* Composer */
-  .row{display:grid;grid-template-columns:1fr auto;gap:10px}
-  textarea{
-    width:100%;background:var(--input);color:var(--text);
-    border:1px solid var(--border);border-radius:12px;padding:12px 14px;
-    font-family:system-ui,Segoe UI,Roboto,sans-serif;resize:none;min-height:72px
-  }
-  .btn{border:0;padding:12px 18px;border-radius:999px;font-weight:800;cursor:pointer;transition:transform .07s ease,opacity .15s}
-  .btn:active{transform:translateY(1px)} .btn[disabled]{opacity:.6;cursor:not-allowed}
-  .primary{background:var(--accent);color:white}
-  .secondary{background:var(--accent-2);color:var(--text)}
-
-  /* Footer */
-  .footer{margin:0 0 8px;text-align:center;color:var(--muted);font-size:12px}
-</style>
-
-<div class="wrap">
-  <div class="card">
-    <div class="head"><img src="/logo.png" alt="EDGE LIF" /></div>
-
-    <div class="toolbar">
-      <div class="left">
-        <div id="mic" title="Start/stop interactive conversation">
-          <div class="wave"></div>
-          <div class="dot"></div><span id="micLabel">Start Voice</span>
-        </div>
-        <div class="hint">Tip: press <b>M</b> to toggle mic</div>
-      </div>
-      <div class="right">
-        <label class="pill"><input id="speakReplies" type="checkbox" checked /> Speak replies</label>
-        <label class="pill">Rate <input id="rate" type="range" min="0.7" max="1.3" step="0.05" value="1" /></label>
-      </div>
+    <div class="controls">
+      <button id="toggleVoice" class="btn pill">Start Voice</button>
+      <span id="stateBadge" class="badge">Idle</span>
+      <label class="switch">
+        <input type="checkbox" id="speakSwitch" checked>
+        <span>Speak replies</span>
+      </label>
+      <label class="range">
+        <span>Rate</span>
+        <input id="rate" type="range" min="0.7" max="1.6" step="0.05" value="1.0" />
+      </label>
+      <span class="badge">Tip: press <b>M</b> to toggle mic</span>
     </div>
 
-    <div id="log" class="log"></div>
-    <div id="error" class="err"></div>
-
-    <div class="row">
-      <textarea id="t" placeholder="Type a message…  (Enter to send, Shift+Enter for newline)"></textarea>
-      <button class="send" id="send">Send</button>
+    <div class="chat">
+      <div id="log"></div>
     </div>
 
-    <div class="foot">
+    <div class="composer">
+      <textarea id="input" placeholder="Type a message…  (Enter to send, Shift+Enter for newline)"></textarea>
+      <button id="send" class="btn">Send</button>
+    </div>
+
+    <div class="footer">
       Created by <a href="https://www.linkedin.com/in/awaiz-ahmed/" target="_blank" rel="noopener">Awaiz Ahmed</a>
     </div>
   </div>
-</div>
 
-<script>
-  // ======== DOM
-  const log = document.getElementById('log');
-  const t   = document.getElementById('t');
-  const sendBtn = document.getElementById('send');
-  const err = document.getElementById('error');
-
-  const mic = document.getElementById('mic');
-  const micLabel = document.getElementById('micLabel');
-  const speakReplies = document.getElementById('speakReplies');
-  const rateInp = document.getElementById('rate');
-
-  const history = [];
-
-  function push(role, text){
-    const d = document.createElement('div');
-    d.className = 'msg ' + (role === 'user' ? 'u' : 'a');
-    d.textContent = text;
-    log.appendChild(d);
-    log.scrollTop = log.scrollHeight;
-  }
-  function showError(msg){ err.textContent = msg; err.style.display = msg ? 'block' : 'none'; }
-
-  async function postJSON(url, payload){
-    const r = await fetch(url, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
-    const text = await r.text(); let data; try{ data = JSON.parse(text); }catch{ data = {error:'Bad JSON', detail:text}; }
-    if(!r.ok || data.error) throw new Error((data.error || `HTTP ${r.status}`) + (data.detail ? ` — ${typeof data.detail==='string' ? data.detail : JSON.stringify(data.detail).slice(0,250)}`:''));
-    return data;
-  }
-
-  // ======== 100-word cap
-  function limitWords(s, n = 100) {
-    const words = String(s || "").trim().split(/\s+/);
-    return words.length > n ? words.slice(0, n).join(" ") + "…" : s;
-  }
-
-  // ======== send flow (used by typing & by recognizer)
-  async function send(){
-    showError('');
-    const text = t.value.trim();
-    if(!text) return;
-    t.value = '';
-    history.push({role:'user', content:text});
-    push('user', text);
-
-    sendBtn.disabled = true; const old = sendBtn.textContent; sendBtn.textContent = '…';
-    try{
-      const res = await postJSON('/api/chat', {messages: history});
-      const raw = res.reply || '[no reply]';
-      const reply = limitWords(raw, 100);        // <= hard cap
-      history.push({role:'assistant', content: reply});
-      push('assistant', reply);
-      speak(reply);    // speaking keeps recognizer running; barge-in handled below
-    }catch(e){
-      push('assistant','[error]');
-      showError(String(e.message || e));
-    }finally{
-      sendBtn.disabled = false; sendBtn.textContent = old; t.focus();
-    }
-  }
-  sendBtn.onclick = send;
-  t.addEventListener('keydown', (e)=>{ if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); send(); }});
-  document.addEventListener('keydown', e => { if(e.key.toLowerCase()==='m') toggleMic(); });
-
-  // ======== TTS (single: Microsoft Emily Online/Neural if available)
-  let voices = [];
-  function loadVoices(){ voices = speechSynthesis.getVoices(); }
-  if('speechSynthesis' in window){ loadVoices(); window.speechSynthesis.onvoiceschanged = loadVoices; }
-
-  function pickEmily(){
-    if(!voices || !voices.length) return null;
-    return voices.find(v=>/microsoft/i.test(v.name)&&/emily/i.test(v.name)&&/(natural|online|neural)/i.test(v.name))
-        || voices.find(v=>/microsoft/i.test(v.name)&&/emily/i.test(v.name))
-        || voices.find(v=>/emily/i.test(v.name))
-        || voices.find(v=>/en-GB/i.test(v.lang)&&/(natural|online|neural)/i.test(v.name))
-        || voices.find(v=>/en-GB/i.test(v.lang))
-        || voices.find(v=>/^en/i.test(v.lang))
-        || voices[0];
-  }
-
-  let speaking = false;
-  let currentTTS = '';  // text currently being spoken (for echo filtering)
-
-  function speak(text){
-    if(!speakReplies.checked || !('speechSynthesis' in window)) { return; }
-    const u = new SpeechSynthesisUtterance(text);
-    const v = pickEmily(); if(v) u.voice = v;
-    u.rate = parseFloat(rateInp.value) || 1.0;
-    u.onstart = ()=>{ speaking = true; currentTTS = text; };
-    u.onend   = ()=>{ speaking = false; currentTTS = ''; };
-    u.onerror = ()=>{ speaking = false; currentTTS = ''; };
-    speechSynthesis.cancel();   // if anything else is queued
-    speechSynthesis.speak(u);
-  }
-
-  // ======== SR (continuous) with barge-in by speaking + echo filter
-  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  let rec = null, loopOn = false, listening = false;
-
-  // naive echo filter: ignore recognition that matches the TTS too closely
-  function normalize(s){ return String(s||'').toLowerCase().replace(/[^a-z0-9\s]/g,' ').replace(/\s+/g,' ').trim(); }
-  function isLikelyEcho(transcript, spoken){
-    if(!spoken) return false;
-    const a = normalize(transcript).split(' ');
-    const b = new Set(normalize(spoken).split(' '));
-    if(a.length < 4) return false;               // too short to judge
-    let match = 0; for(const w of a){ if(b.has(w)) match++; }
-    return (match / a.length) > 0.6;             // >60% overlap => probably echo
-  }
-
-  if(SR){
-    rec = new SR();
-    rec.lang = 'en-GB';
-    rec.interimResults = true;
-    rec.continuous = true;                       // <— keep the mic hot
-
-    let partial = '';
-
-    rec.onstart = () => {
-      listening = true; mic.classList.add('on'); micLabel.textContent = 'Voice On';
-    };
-
-    rec.onresult = (ev) => {
-      for(const r of ev.results){
-        const txt = r[0]?.transcript || '';
-        if(r.isFinal){
-          const finalText = (partial + ' ' + txt).trim();
-          partial = '';
-          if(!finalText) continue;
-
-          // If we're speaking AND this looks like our own TTS -> ignore
-          if(speaking && isLikelyEcho(finalText, currentTTS)) {
-            continue;
-          }
-
-          // If we're speaking but text is not echo, that's a barge-in: cancel TTS
-          if(speaking){ try{ speechSynthesis.cancel(); }catch{} speaking=false; currentTTS=''; }
-
-          // Treat as a user utterance
-          t.value = finalText;
-          send();
-        } else {
-          partial = (partial + ' ' + txt).trim();
-        }
-      }
-    };
-
-    // keep it running
-    rec.onerror = () => { listening=false; mic.classList.remove('on'); if(loopOn) setTimeout(safeStart, 250); };
-    rec.onend   = () => { listening=false; mic.classList.remove('on'); if(loopOn) setTimeout(safeStart, 150); };
-
-    function safeStart(){
-      try{ rec.start(); }catch(_){}   // InvalidStateError if already started
-    }
-
-    function toggleMic(){
-      showError('');
-      loopOn = !loopOn;
-      if(loopOn){ safeStart(); }
-      else{
-        try{ rec.stop(); }catch(_){}
-        try{ speechSynthesis.cancel(); }catch(_){}
-        speaking=false; currentTTS='';
-        mic.classList.remove('on'); micLabel.textContent = 'Start Voice';
-      }
-    }
-    mic.onclick = toggleMic;
-    document.addEventListener('keydown', e => { if(e.key.toLowerCase()==='m') toggleMic(); });
-  } else {
-    document.querySelector('.hint').textContent = 'Voice needs Chrome/Edge (Web Speech API)';
-    mic.onclick = ()=>alert('Speech recognition not supported in this browser.');
-  }
-</script>
+  <script type="module" src="/api/chat.js"></script>
+</body>
+</html>
