@@ -16,7 +16,27 @@ export default async function handler(req) {
   try { body = await req.json(); } catch {
     return new Response(JSON.stringify({ error: 'Invalid JSON body' }), { status: 400, headers: { 'content-type': 'application/json' } });
   }
+  const log = document.getElementById('log');
+  let autoScroll = true;
+  function updateAutoScrollFlag() {
+    const nearBottom = (log.scrollHeight - log.scrollTop - log.clientHeight) < 60;
+    autoScroll = nearBottom;
+  }
+  log.addEventListener('scroll', updateAutoScrollFlag);
 
+  // Call this after you append any new message
+  function scrollLogToBottom() {
+    if (autoScroll) log.scrollTop = log.scrollHeight;
+  }
+  function push(role, text){
+  const div = document.createElement('div');
+  div.className = `msg ${role}`;
+  div.textContent = text;
+  log.appendChild(div);
+
+  // keep view pinned to bottom only if user is already there
+  scrollLogToBottom();
+  }
   const userMsgs = Array.isArray(body.messages) ? body.messages : [];
   const messages = [
     { role: 'system', content: 'You are EDGE AI. Be concise. Keep answers under 100 words unless explicitly asked for more. Use simple English.' },
