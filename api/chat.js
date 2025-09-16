@@ -19,7 +19,7 @@ export default async function handler(req) {
 
   const userMsgs = Array.isArray(body.messages) ? body.messages : [];
   const messages = [
-    { role: 'system', content: 'You are EDGE AI. Be concise. Keep answers under 100 words unless explicitly asked for more. Use simple English.' },
+    { role: 'system', content: 'You are EDGE AI. Be concise. Keep answers under 70 words unless explicitly asked for more. Use simple English. Act friendly and excited. You are meant to greet people.' },
     ...userMsgs.slice(-8)
   ];
 

@@ -102,7 +102,7 @@
     }
 
     const history = [];
-    function limitWords(s, n=100){
+    function limitWords(s, n=70){
       const words = String(s||'').trim().split(/\s+/);
       return words.length > n ? words.slice(0, n).join(' ') + '…' : s;
     }
@@ -254,6 +254,56 @@
 
     // If user starts talking while TTS is speaking, interrupt speech and switch to listening
     document.addEventListener('visibilitychange',()=>{}); // no-op; keeps audio context warm
-  </script>
+    // Minimal diagnostics for Double
+    (function(){
+      const el = document.createElement('div');
+      el.style.cssText = 'position:fixed;left:12px;bottom:12px;z-index:9999;background:#0f172a;color:#e5e7eb;border:1px solid #334155;border-radius:12px;padding:12px 14px;font:12px/1.3 system-ui;max-width:420px';
+      el.innerHTML = `
+        <div style="font-weight:700;margin-bottom:6px">Diagnostics</div>
+        <div>UA: <code style="font-size:11px">${navigator.userAgent}</code></div>
+        <div>SpeechRecognition: <b>${'webkitSpeechRecognition'in window || 'SpeechRecognition'in window}</b></div>
+        <div>speechSynthesis: <b>${'speechSynthesis'in window}</b></div>
+        <div>getUserMedia: <b>${!!(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia)}</b></div>
+        <div id="perm">Mic permission: <i>checking…</i></div>
+        <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
+          <button id="beep" style="padding:6px 10px;border-radius:8px;border:0;background:#f97316;color:#fff;cursor:pointer">Play test beep</button>
+          <button id="mic" style="padding:6px 10px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:#e5e7eb;cursor:pointer">Mic test</button>
+        </div>
+      `;
+      document.body.appendChild(el);
+
+      // Autoplay / TTS unlock test
+      document.getElementById('beep').onclick = async () => {
+        try {
+          const ctx = new (window.AudioContext||window.webkitAudioContext)();
+          await ctx.resume();
+          const o = ctx.createOscillator(); o.connect(ctx.destination); o.start(); setTimeout(()=>o.stop(), 250);
+          if (speechSynthesis) { const u = new SpeechSynthesisUtterance('Audio unlocked'); speechSynthesis.speak(u); }
+        } catch (e) { alert('Audio error: ' + e); }
+      };
+
+      // Mic permission + gUM test
+      (async () => {
+        const permEl = document.getElementById('perm');
+        try {
+          if (!navigator.permissions) { permEl.innerHTML = 'Mic permission: <b>unknown</b>'; return; }
+          const st = await navigator.permissions.query({ name: 'microphone' });
+          permEl.innerHTML = 'Mic permission: <b>'+ st.state +'</b>';
+        } catch { permEl.innerHTML = 'Mic permission: <b>unknown</b>'; }
+      })();
+
+      document.getElementById('mic').onclick = async () => {
+        try {
+          const s = await navigator.mediaDevices.getUserMedia({ audio: true });
+          const tracks = s.getAudioTracks();
+          alert('Mic gUM success. Track: ' + (tracks[0] && tracks[0].label || 'OK'));
+          s.getTracks().forEach(t=>t.stop());
+        } catch (e) {
+          alert('Mic blocked: ' + e.message);
+        }
+      };
+    })();
+</script>
+
 </body>
 </html>
