@@ -1,5 +1,6 @@
 // api/chat.js
-// Frontend logic + Vercel edge function call (Groq). Voice turn-taking with barge-in and delays.
+// Frontend logic + Vercel edge function call (Groq).
+// Voice turn-taking with permission prompt + barge-in + backoffs.
 
 const API_BASE = ''; // same origin
 const $ = (s)=>document.querySelector(s);
@@ -10,18 +11,26 @@ const toggleVoiceBtn = $("#toggleVoice");
 const speakSwitch = $("#speakSwitch");
 const rateEl = $("#rate");
 const stateBadge = $("#stateBadge");
+const errBar = $("#err");
 
 // ---- Chat state -------------------------------------------------------------
 const history = [];
-let inFlight = false;          // request gate (avoid 429/dup)
-let lastSendAt = 0;            // min spacing between API calls
+let inFlight = false;
+let lastSendAt = 0;
 const MIN_SEND_SPACING_MS = 1100;
 
-const STATE = { IDLE: 'Idle', LISTEN: 'Listening', THINK: 'Thinking', SPEAK: 'Speaking', WAIT: 'Waiting', INTERRUPTED:'Interrupted → Listening' };
+const STATE = {
+  IDLE:'Idle', LISTEN:'Listening', THINK:'Thinking…', SPEAK:'Speaking…',
+  WAIT:'Waiting…', INTERRUPTED:'Interrupted → Listening', NEEDS_PERMISSION:'Mic blocked'
+};
 let state = STATE.IDLE;
 let interrupted = false;
 
 // ---- UI helpers -------------------------------------------------------------
+function showError(msg=''){
+  errBar.textContent = msg;
+  errBar.style.display = msg ? 'block' : 'none';
+}
 function badge(cls, text){
   stateBadge.className = `badge ${cls||''}`; stateBadge.textContent = text;
 }
@@ -32,6 +41,7 @@ function setState(s){
   else if (s === STATE.SPEAK) badge('speaking', 'Speaking…');
   else if (s === STATE.WAIT) badge('', 'Waiting…');
   else if (s === STATE.INTERRUPTED) badge('interrupt', 'Interrupted → Listening');
+  else if (s === STATE.NEEDS_PERMISSION) badge('interrupt', 'Mic blocked');
   else badge('', 'Idle');
 }
 function push(role, text){
@@ -48,7 +58,7 @@ function limitWords(s, n = 100) {
   return words.length > n ? words.slice(0, n).join(" ") + "…" : s;
 }
 
-// ---- Vercel edge function caller -------------------------------------------
+// ---- Network ---------------------------------------------------------------
 async function postJSON(url, payload){
   const r = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
   if(!r.ok) throw new Error(await r.text());
@@ -58,7 +68,7 @@ async function postJSON(url, payload){
 async function sendText(text){
   if (!text) return;
   const now = Date.now();
-  if (inFlight || (now - lastSendAt) < MIN_SEND_SPACING_MS) return; // simple backoff
+  if (inFlight || (now - lastSendAt) < MIN_SEND_SPACING_MS) return;
   inFlight = true; lastSendAt = now;
 
   history.push({role:'user', content:text});
@@ -72,12 +82,13 @@ async function sendText(text){
     history.push({role:'assistant', content: reply});
     push('assistant', reply);
 
-    if (speakSwitch.checked) await speak(reply);         // async, returns after TTS ends or is cancelled
-    // Wait 5s before reopening mic unless interrupted immediately
+    if (speakSwitch.checked) await speak(reply);
+
+    // wait a moment before re-opening mic
     if (!interrupted && voice.enabled){
       setState(STATE.WAIT);
-      await wait(5000);
-      if (!speechSynthesis.speaking) voice.start();      // reopen listening
+      await wait(500);
+      if (!speechSynthesis.speaking) voice._resumeListening();
     }
   }catch(e){
     console.error(e);
@@ -88,7 +99,7 @@ async function sendText(text){
   }
 }
 
-// ---- Keyboard & button ------------------------------------------------------
+// ---- Buttons / keyboard -----------------------------------------------------
 sendBtn.onclick = ()=> {
   const text = input.value.trim();
   input.value = '';
@@ -104,11 +115,10 @@ document.addEventListener('keydown', (ev)=>{
   if (ev.key.toLowerCase() === 'm') toggleVoiceBtn.click();
 });
 
-// ---- Speech Synthesis (Emily preferred) ------------------------------------
+// ---- Speech synthesis (prefer Microsoft Emily) ------------------------------
 let selectedVoice = null;
 function pickVoice(){
   const voices = speechSynthesis.getVoices() || [];
-  // Prefer Microsoft Emily Online / Neural variants
   selectedVoice = voices.find(v => /emily/i.test(v.name) && /microsoft/i.test(v.name)) ||
                   voices.find(v => /neural/i.test(v.name) && /microsoft/i.test(v.name)) ||
                   voices.find(v => /english/i.test(v.lang)) || voices[0] || null;
@@ -127,9 +137,7 @@ function speak(text){
       u.onend = ()=> { if(!interrupted) setState(STATE.IDLE); resolve(); };
       u.onerror = ()=> { if(!interrupted) setState(STATE.IDLE); resolve(); };
       speechSynthesis.speak(u);
-    }catch{
-      resolve();
-    }
+    }catch{ resolve(); }
   });
 }
 function cancelTTS(){
@@ -140,49 +148,86 @@ function cancelTTS(){
   }
 }
 
-// ---- Voice activity detection (for barge-in while speaking) -----------------
+// ---- Permission helper ------------------------------------------------------
+async function ensureMicPermission(){
+  try{
+    const stream = await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true, noiseSuppression:true}});
+    stream.getTracks().forEach(t=>t.stop()); // we only needed to prompt; SR will access mic internally
+    showError('');
+    return true;
+  }catch(err){
+    console.warn('getUserMedia error', err);
+    showError('Microphone permission is blocked. Click the mic/camera icon in the address bar and allow access, then press Start Voice again.');
+    setState(STATE.NEEDS_PERMISSION);
+    return false;
+  }
+}
+
+// ---- Voice (SpeechRecognition + VAD for barge-in) --------------------------
 const voice = {
-  enabled: false,
-  rec: null,
-  ctx: null, analyser: null, data: null, raf: 0,
-  lastFinal: '', // dedupe last transcript
-  start: async function(){
+  enabled:false, rec:null, ctx:null, analyser:null, data:null, raf:0,
+  lastFinal:'',
+
+  async start(){
     if (this.enabled) return;
-    // STT instance (Web Speech API)
+
+    // API support check
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SR) { alert('This browser does not support SpeechRecognition'); return; }
+    if (!SR){
+      showError('This browser does not support SpeechRecognition. Use Chrome/Edge on desktop/Android.');
+      setState(STATE.NEEDS_PERMISSION);
+      return;
+    }
+
+    // Make sure user granted mic before starting the recognizer
+    const ok = await ensureMicPermission();
+    if (!ok) return;
+
     this.enabled = true;
-    setState(STATE.LISTEN);
+    showError('');
+    toggleVoiceBtn.textContent = 'Voice On';
+
+    // Create recognizer
     this.rec = new SR();
     this.rec.lang = 'en-US';
-    this.rec.interimResults = false;  // only final lines
-    this.rec.continuous = false;      // one utterance→end
+    this.rec.interimResults = false;
+    this.rec.continuous = false;
+
+    this.rec.onstart = ()=> setState(STATE.LISTEN);
 
     this.rec.onresult = async (e)=>{
       const text = (e.results[0][0].transcript || '').trim();
       if (!text || text === this.lastFinal) return;
       this.lastFinal = text;
       setState(STATE.THINK);
-      // Small safety spacing to avoid 429 bursts
-      await wait(350);
+      await wait(350); // tiny safety spacing
       sendText(text);
     };
-    this.rec.onend = ()=>{
-      // Do not auto-reopen immediately; state machine decides when
-      if (this.enabled && state === STATE.LISTEN){
-        // slight debounce reopen to catch lingering noise
-        setTimeout(()=> { try{ this.rec.start(); }catch{} }, 250);
+
+    this.rec.onerror = (e)=>{
+      console.warn('SR error', e?.error || e);
+      if (e?.error === 'not-allowed'){
+        showError('Microphone access denied. Allow mic in the address bar and press Start Voice again.');
+        setState(STATE.NEEDS_PERMISSION);
+        this.stop();
+        return;
       }
+      // soften common transient errors
+      if (this.enabled) setTimeout(()=>this._resumeListening(), 400);
     };
-    this.rec.onerror = (e)=> console.warn('SR error', e);
 
-    // Kick recognition
-    try{ this.rec.start(); }catch{}
+    this.rec.onend = ()=>{
+      // We'll reopen when allowed by state machine
+    };
 
-    // Mic VAD stream for barge-in while speaking
+    // Kick once
+    this._resumeListening();
+
+    // VAD for barge-in while TTS is speaking
     try{
       const stream = await navigator.mediaDevices.getUserMedia({audio:true});
       this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+      await this.ctx.resume();
       const src = this.ctx.createMediaStreamSource(stream);
       this.analyser = this.ctx.createAnalyser();
       this.analyser.fftSize = 1024;
@@ -191,16 +236,11 @@ const voice = {
       const tick = ()=>{
         if (!this.enabled) return;
         this.analyser.getByteTimeDomainData(this.data);
-        let sum = 0;
-        for(let i=0;i<this.data.length;i++){
-          const v = (this.data[i] - 128)/128; sum += v*v;
-        }
+        let sum = 0; for (let i=0;i<this.data.length;i++){ const v=(this.data[i]-128)/128; sum += v*v; }
         const rms = Math.sqrt(sum/this.data.length);
-        // If user talks while TTS speaking -> interrupt
-        if (speechSynthesis.speaking && rms > 0.06){ // adjust if needed
+        if (speechSynthesis.speaking && rms > 0.06){
           cancelTTS();
-          // give 600ms to let TTS buffer clear, then start SR
-          setTimeout(()=> { try{ this.rec.start(); }catch{} }, 600);
+          setTimeout(()=> this._resumeListening(), 600);
         }
         this.raf = requestAnimationFrame(tick);
       };
@@ -208,9 +248,22 @@ const voice = {
     }catch(err){
       console.warn('VAD stream error', err);
     }
-    toggleVoiceBtn.textContent = 'Voice On';
   },
-  stop: function(){
+
+  _resumeListening(){
+    if (!this.enabled || !this.rec) return;
+    try{
+      this.rec.abort?.(); // ensure clean state
+    }catch{}
+    try{
+      this.rec.start();
+    }catch(e){
+      // start can throw if called too fast; try again
+      setTimeout(()=>{ try{ this.rec.start(); }catch{} }, 250);
+    }
+  },
+
+  stop(){
     this.enabled = false;
     try{ this.rec && this.rec.stop(); }catch{}
     if (this.ctx){ try{ this.ctx.close(); }catch{} this.ctx = null; }
@@ -224,16 +277,7 @@ toggleVoiceBtn.onclick = ()=> voice.enabled ? voice.stop() : voice.start();
 
 // ---- Helpers ----------------------------------------------------------------
 function wait(ms){ return new Promise(r=>setTimeout(r,ms)); }
-
-// If the user types while it’s speaking, barge-in:
 input.addEventListener('focus', cancelTTS);
 
-// Toggle mic by keyboard
-// (global key handler already attached above)
-
-// -----------------------------------------------------------------------------
-// OPTIONAL: small auto-greeting in the log (no API call)
-push('assistant', 'Voice is optional. Press “Start Voice” or type a message.');
-
-// Expose send for manual typing
-window.__edge_send = sendText;
+// ---- Greeting ---------------------------------------------------------------
+push('assistant', 'Voice is optional. Press “Start Voice” and allow the microphone, or type a message.');

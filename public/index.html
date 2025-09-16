@@ -7,111 +7,51 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800&display=swap" rel="stylesheet">
   <style>
-    /* ===== KIOSK SCALE KNOB =====
-       Increase --kiosk-scale (1.0 → 1.6) to make everything larger */
     :root{
       --kiosk-scale: 1.35;
-
       --bg:#0b0c0f; --panel:#12141a; --muted:#9aa0a6; --text:#e6e9ef;
       --accent:#f97316; --accent2:#1d232f; --ok:#22c55e; --warn:#eab308; --err:#ef4444;
       --border:#262a33; --bubble:#1b2430; --bubble2:#22303b; --input:#0f1116;
     }
-
     *{box-sizing:border-box}
     html,body{height:100%}
     body{
       margin:0;
       font-family:'Montserrat',system-ui,Segoe UI,Roboto,sans-serif;
-      /* Base font scales with viewport + kiosk knob */
       font-size: clamp(16px, calc(0.9vw + 0.9vh)*var(--kiosk-scale), 24px);
       background:
         radial-gradient(1200px 800px at 80% -50%, rgba(249,115,22,.10), transparent 60%),
         radial-gradient(900px 500px at -10% 120%, rgba(34,197,94,.10), transparent 60%),
         var(--bg);
       color:var(--text);
-      overflow:hidden; /* no white page scrollbar */
+      overflow:hidden;
     }
-
-    /* Layout fills viewport; roomy for big screens */
     .wrap{
-      height:100%;
-      display:grid;
-      grid-template-rows:auto auto 1fr auto auto;
+      height:100%; display:grid;
+      grid-template-rows:auto auto auto 1fr auto auto;
       gap:clamp(10px, 1.4vh, 18px);
       padding:clamp(10px, 1.6vh, 22px) clamp(12px, 1.8vw, 28px);
     }
-
-    .logo{
-      display:block;
-      height:clamp(58px, 9vh, 120px);
-      margin:0 auto;
-      filter:drop-shadow(0 10px 30px rgba(0,0,0,.5));
-    }
-
-    .controls{
-      display:flex; gap:clamp(8px, 1vw, 16px);
-      align-items:center; justify-content:center; flex-wrap:wrap
-    }
-
-    .badge{
-      font-size:.85em;
-      padding: clamp(6px, .7vh, 10px) clamp(10px, 1.4vw, 14px);
-      border-radius:999px; border:1px solid var(--border);
-      background:var(--panel); color:var(--muted);
-    }
+    .logo{display:block;height:clamp(58px, 9vh, 120px);margin:0 auto;filter:drop-shadow(0 10px 30px rgba(0,0,0,.5))}
+    .errorbar{display:none;background:#3b1d1d;border:1px solid #7a2e2e;color:#f3caca;padding:.7em 1em;border-radius:10px}
+    .controls{display:flex; gap:clamp(8px,1vw,16px); align-items:center; justify-content:center; flex-wrap:wrap}
+    .badge{font-size:.85em;padding:.6em .9em;border-radius:999px;border:1px solid var(--border);background:var(--panel);color:var(--muted)}
     .badge.ok{color:#eaffef;border-color:#214f35;background:linear-gradient(180deg,#173425,#0f1b16)}
     .badge.speaking{color:#ffefe6;border-color:#5b3116;background:linear-gradient(180deg,#2e170e,#1b110c)}
     .badge.interrupt{color:#ffeaea;border-color:#6a1d1d;background:linear-gradient(180deg,#3a1616,#1f0e0e)}
-
-    .pill{
-      border:1px solid var(--border); background:var(--panel); color:var(--text);
-      padding: clamp(10px, 1.2vh, 14px) clamp(14px, 1.6vw, 18px);
-      border-radius:12px; display:flex; align-items:center; gap:10px;
-      font-weight:700;
-    }
-
-    .switch{display:flex; align-items:center; gap:10px; padding:.6em .9em; border-radius:12px; border:1px solid var(--border); background:var(--panel)}
+    .pill{border:1px solid var(--border);background:var(--panel);color:var(--text);padding:.8em 1.1em;border-radius:12px;display:flex;align-items:center;gap:10px;font-weight:700}
+    .switch{display:flex;align-items:center;gap:10px;padding:.6em .9em;border-radius:12px;border:1px solid var(--border);background:var(--panel)}
     .switch input{width:1.2em;height:1.2em}
-
-    .range{display:flex; align-items:center; gap:.8em; border:1px solid var(--border); padding:.6em .9em; border-radius:12px; background:var(--panel)}
+    .range{display:flex;align-items:center;gap:.8em;border:1px solid var(--border);padding:.6em .9em;border-radius:12px;background:var(--panel)}
     .range input{width: clamp(140px, 20vw, 220px)}
-
-    .chat{
-      background:var(--panel); border:1px solid var(--border); border-radius:16px;
-      padding: clamp(10px, 1.2vh, 14px);
-      min-height:0; display:grid; grid-template-rows:1fr; overflow:hidden;
-    }
-    #log{overflow:auto; padding-right:10px; display:grid; gap:clamp(10px, 1.1vh, 14px); align-content:start}
-
-    .msg{
-      max-width: min(90%, 1600px);
-      border-radius:14px; padding: clamp(12px, 1.2vh, 16px) clamp(14px, 1.6vw, 18px);
-      line-height:1.6; white-space:pre-wrap; font-size:1em;
-    }
-    .user{justify-self:end; background:var(--bubble2)}
-    .assistant{justify-self:start; background:var(--bubble)}
-
-    .composer{
-      display:grid; grid-template-columns:1fr auto; gap:clamp(10px, 1.2vw, 16px);
-      margin-top:4px
-    }
-
-    textarea{
-      width:100%; background:var(--input); color:var(--text);
-      border:1px solid var(--border); border-radius:14px;
-      padding: clamp(12px, 1.2vh, 16px) clamp(14px, 1.6vw, 18px);
-      resize:none; min-height: clamp(110px, 16vh, 200px);
-      font-size:1em;
-    }
-
-    button.btn{
-      background:var(--accent); color:white; border:0; border-radius:14px;
-      padding: clamp(14px, 1.5vh, 18px) clamp(18px, 2vw, 24px);
-      font-weight:800; cursor:pointer;
-      box-shadow:0 8px 28px rgba(249,115,22,.30);
-      font-size:1em;
-    }
-
+    .chat{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:clamp(10px, 1.2vh, 14px);min-height:0;display:grid;grid-template-rows:1fr;overflow:hidden}
+    #log{overflow:auto;padding-right:10px;display:grid;gap:clamp(10px,1.1vh,14px);align-content:start}
+    .msg{max-width:min(90%,1600px);border-radius:14px;padding:clamp(12px,1.2vh,16px) clamp(14px,1.6vw,18px);line-height:1.6;white-space:pre-wrap;font-size:1em}
+    .user{justify-self:end;background:var(--bubble2)}
+    .assistant{justify-self:start;background:var(--bubble)}
+    .composer{display:grid;grid-template-columns:1fr auto;gap:clamp(10px,1.2vw,16px);margin-top:4px}
+    textarea{width:100%;background:var(--input);color:var(--text);border:1px solid var(--border);border-radius:14px;padding:clamp(12px,1.2vh,16px) clamp(14px,1.6vw,18px);resize:none;min-height: clamp(110px,16vh,200px);font-size:1em}
+    button.btn{background:var(--accent);color:white;border:0;border-radius:14px;padding:clamp(14px,1.5vh,18px) clamp(18px,2vw,24px);font-weight:800;cursor:pointer;box-shadow:0 8px 28px rgba(249,115,22,.30);font-size:1em}
     .footer{color:var(--muted); text-align:center; font-size:.9em}
     .footer a{color:#92c5ff; text-decoration:none}
   </style>
@@ -119,12 +59,13 @@
 <body>
   <div class="wrap">
     <img class="logo" src="/logo.png" alt="EDGE LIF" />
+    <div id="err" class="errorbar"></div>
 
     <div class="controls">
       <button id="toggleVoice" class="btn pill">Start Voice</button>
       <span id="stateBadge" class="badge">Idle</span>
       <label class="switch">
-        <input type="checkbox" id="speakSwitch" checked>
+        <input type="checkbox" id="speakSwitch" checked />
         <span>Speak replies</span>
       </label>
       <label class="range">
