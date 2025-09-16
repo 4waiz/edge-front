@@ -9,30 +9,31 @@
     --accent:#f97316; --accent2:#00e6ff; --border:#262a33; --input:#0e1013;
   }
   *{box-sizing:border-box}
-  body{margin:0;background:
+  body{
+    margin:0;
+    background:
       radial-gradient(1200px 800px at 80% -10%, #0a1f31 0%, transparent 60%),
       radial-gradient(800px 600px at -10% 110%, #25132c 0%, transparent 60%),
       var(--bg);
-    color:var(--text); font:16px/1.55 system-ui, Segoe UI, Roboto, sans-serif}
+    color:var(--text);
+    font:16px/1.55 system-ui, Segoe UI, Roboto, sans-serif
+  }
   .wrap{max-width:1000px;margin:28px auto;padding:0 16px}
   .card{
     position:relative; background:linear-gradient(180deg,#10131a 0%,#0b0d12 100%);
     border:1px solid var(--border); border-radius:18px; padding:22px; display:grid; gap:16px;
     box-shadow:0 20px 70px rgba(0,0,0,.55);
   }
-  /* glow border */
   .card:before{
     content:""; position:absolute; inset:-1px; border-radius:20px; z-index:-1;
     background:conic-gradient(from 180deg, #0ff, #f60, #6cf, #f60, #0ff);
     filter:blur(18px) opacity(.25);
   }
 
-  /* header / logo */
   .head{display:flex; justify-content:center; align-items:center; padding:6px 0 8px}
   .head img{height:112px; width:auto; filter:drop-shadow(0 10px 24px rgba(0,0,0,.45))}
   @media (max-width:560px){ .head img{height:92px} }
 
-  /* controls row */
   .toolbar{display:flex; gap:12px; align-items:center; flex-wrap:wrap; justify-content:space-between}
   .left, .right{display:flex; gap:12px; align-items:center; flex-wrap:wrap}
   .pill{background:var(--input); border:1px solid var(--border); color:var(--muted);
@@ -40,7 +41,6 @@
   .pill input[type=range]{accent-color:var(--accent)}
   .hint{font-size:12px; color:var(--muted)}
 
-  /* mic */
   #mic{
     position:relative; display:flex; align-items:center; gap:10px; cursor:pointer;
     background:linear-gradient(180deg,#18202a,#141820); color:#fff; border:1px solid #1e2630;
@@ -52,14 +52,12 @@
   #mic.on .wave{animation:pulse 1.6s infinite; background:radial-gradient(closest-side, rgba(239,68,68,.35), transparent)}
   @keyframes pulse{0%{opacity:.45; transform:scale(.98)} 70%{opacity:.06; transform:scale(1.06)} 100%{opacity:0; transform:scale(1.08)}}
 
-  /* chat log */
   .log{background:var(--input); border:1px solid var(--border); border-radius:14px; padding:12px; height:52vh; overflow:auto}
   .msg{max-width:80%; padding:10px 12px; border-radius:12px; margin:10px 0; white-space:pre-wrap}
   .u{margin-left:auto;background:#24303a}
   .a{background:#1b2430}
   .err{background:#3b1d1d;color:#f3caca;border:1px solid #7a2e2e;border-radius:8px;padding:8px 10px;display:none}
 
-  /* input row */
   .row{display:grid; grid-template-columns:1fr auto; gap:12px}
   textarea{background:var(--input); color:var(--text); border:1px solid var(--border); border-radius:12px;
            padding:12px; resize:none; height:92px}
@@ -134,6 +132,12 @@
     return data;
   }
 
+  // Limit assistant replies to N words (hard cap)
+  function limitWords(s, n = 100) {
+    const words = String(s || "").trim().split(/\s+/);
+    return words.length > n ? words.slice(0, n).join(" ") + "…" : s;
+  }
+
   async function send(){
     showError('');
     const text = t.value.trim();
@@ -145,10 +149,11 @@
     sendBtn.disabled = true; const old = sendBtn.textContent; sendBtn.textContent = '…';
     try{
       const res = await postJSON('/api/chat', {messages: history});
-      const reply = res.reply || '[no reply]';
+      const raw = res.reply || '[no reply]';
+      const reply = limitWords(raw, 100);        // <= hard cap to ~100 words
       history.push({role:'assistant', content: reply});
       push('assistant', reply);
-      speak(reply);   // will auto-resume listening when speech ends (if loop mode on)
+      speak(reply);   // will auto-resume listening after speech if loop mode is on
     }catch(e){
       push('assistant','[error]');
       showError(String(e.message || e));
@@ -168,7 +173,6 @@
 
   function pickEmily(){
     if(!voices || !voices.length) return null;
-    // prefer Microsoft Emily (Online/Natural/Neural), then Emily, then UK English, then any English
     return voices.find(v=>/microsoft/i.test(v.name)&&/emily/i.test(v.name)&&/(natural|online|neural)/i.test(v.name))
         || voices.find(v=>/microsoft/i.test(v.name)&&/emily/i.test(v.name))
         || voices.find(v=>/emily/i.test(v.name))
@@ -187,8 +191,7 @@
     u.onstart = ()=>{ speaking = true; };
     u.onend   = ()=>{ speaking = false; autoListen(); };
     u.onerror = ()=>{ speaking = false; autoListen(); };
-    // barge-in support: if mic starts, we call speechSynthesis.cancel() elsewhere
-    speechSynthesis.cancel();
+    speechSynthesis.cancel(); // barge-in safety
     speechSynthesis.speak(u);
   }
 
@@ -203,8 +206,7 @@
 
     rec.onstart = () => {
       listening = true; mic.classList.add('on'); micLabel.textContent = 'Listening…';
-      // barge-in: stop TTS the moment we start listening
-      if('speechSynthesis' in window) speechSynthesis.cancel();
+      if('speechSynthesis' in window) speechSynthesis.cancel(); // barge-in
     };
     rec.onresult = (ev) => {
       let finalText=''; interim='';
@@ -214,17 +216,15 @@
     rec.onerror = (e)=>{ listening=false; mic.classList.remove('on'); showError('Mic error: '+e.error); if(loopOn) autoListen(); };
     rec.onend   = ()=>{
       listening = false; mic.classList.remove('on'); micLabel.textContent = loopOn ? 'Voice On' : 'Start Voice';
-      // If user said something, send; else if loop is on, try to listen again
       if(t.value.trim()) send(); else if(loopOn && !speaking) autoListen();
     };
   } else {
-    // Non-support message
     document.querySelector('.hint').textContent = 'Voice needs Chrome/Edge (Web Speech API)';
   }
 
   function autoListen(){
     if(!loopOn || !rec) return;
-    if(speaking) return; // wait until TTS ends
+    if(speaking) return;
     try{ rec.start(); }catch(e){}
   }
 
