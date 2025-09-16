@@ -221,6 +221,20 @@
       if (voiceOn){ stopSpeaking(); startSR(); }
       else { stopSR(); stopSpeaking(); }
     }
+    // example handlers:
+    document.getElementById('btnVoice').onclick = () => {
+      const on = !document.body.classList.contains('voice-on');
+      document.body.classList.toggle('voice-on', on);
+      toggleVoice(on);
+      // update status pill from Idle <-> Listening here
+    };
+    window.addEventListener('keydown', (e) => {
+      if (e.key.toLowerCase() === 'm') {
+        const on = !document.body.classList.contains('voice-on');
+        document.body.classList.toggle('voice-on', on);
+        toggleVoice(on);
+      }
+    });
 
     // ----------------------- Chat (calls /api/chat) -----------------------
     async function postJSON(url, payload){
