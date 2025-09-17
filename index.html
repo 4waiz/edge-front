@@ -48,14 +48,13 @@
 
     .card{ width:100%; display:flex; justify-content:center; align-items:center; border:none; background:transparent; box-shadow:none; }
     .footer {color: #aab2bd; text-align: center; font-size: 19px;}
-    .footer a{color:#a7d7ff;text-decoration:none;border-bottom:1px solid rgba(167,215,255,.35)}
+    .footer a{color:#a7d7ff;text-decoration:none;border-bottom:1px solid rgba(167,255,255,.35)}
 
     .blob-wrap{
       display:flex;flex-direction:column;align-items:center;justify-content:center;
       gap:20px; text-align:center;
-      position: relative; /* Needed for z-indexing glow correctly */
+      position: relative;
     }
-    /* FIX: The .blob container handles the animated shape and glowing filter only. */
     .blob {
       width:min(35vh, 380px); height:min(35vh, 380px);
       position:relative;
@@ -65,30 +64,31 @@
         floaty 12s ease-in-out infinite;
     }
 
-    /* FIX: This new element holds the colors and is MASKED, not clipped. */
     .blob-visuals {
       position: absolute;
       inset: 0;
-      border-radius: inherit; /* Copies animated border-radius from parent */
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      
-      background: conic-gradient(from 90deg, #ee00ff, #6600ff, #00ccff, #ee00ff);
-      mix-blend-mode: screen; /* Lighten effect */
-
-      /* This is the key to the bug fix. It masks the element instead of clipping it. */
-      -webkit-mask: radial-gradient(circle, white, white, rgba(255,255,255,.2) 90%, transparent 100%);
-      mask: radial-gradient(circle, white, white, rgba(255,255,255,.2) 90%, transparent 100%);
-      animation: spin 15s linear infinite reverse; /* Gives the internal swirl */
+      border-radius: inherit;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      /* FIX: New static conic gradient to match screenshot */
+      background: conic-gradient(from 180deg at 50% 50%, #00aaff 0%, #a200ff 35%, #f300ff 50%, #a200ff 65%, #00aaff 100%);
+      -webkit-mask: radial-gradient(circle, white 80%, transparent 100%);
+      mask: radial-gradient(circle, white 80%, transparent 100%);
     }
 
-    .blob-content { z-index: 10; position: relative; }
+    /* FIX: Added padding-bottom to shift text upwards */
+    .blob-content {
+      z-index: 10;
+      position: relative;
+      padding-bottom: 35px;
+    }
     
     .blob h1 {
       font-family: 'Poppins', sans-serif;
       font-weight: 800;
-      font-size: clamp(20px, 3.2vw, 36px);
+      /* FIX: Font size slightly reduced */
+      font-size: clamp(18px, 2.8vw, 32px);
       margin: 0 18px;
       color: #e8eef8;
       text-shadow: 0 0 8px rgba(255, 255, 255, 0.3),
@@ -107,7 +107,7 @@
       position: absolute; top: 0; left: 0;
       width: 100%; height: 100%; z-index: 5;
       opacity: 0; transition: opacity .4s ease;
-      mix-blend-mode: overlay; /* Blends better with new bg */
+      mix-blend-mode: overlay;
     }
     .blob.listening h1,
     .blob.speaking h1 { opacity: 0.1; }
@@ -137,7 +137,6 @@
       75% { border-radius: 40% 70% 30% 60% / 60% 40% 70% 30%; }
       100% { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; }
     }
-    /* Speaking pulse now affects the main blob's filter, which is reliable */
     @keyframes speaking-pulse {
       0%, 100% { transform: translateY(0); filter: drop-shadow(0 0 25px rgba(238,0,255,0.5)) drop-shadow(0 0 45px rgba(0,204,255,0.4)); }
       50% { transform: translateY(-10px); filter: drop-shadow(0 0 40px rgba(238,0,255,0.8)) drop-shadow(0 0 65px rgba(0,204,255,0.6)); }
@@ -163,7 +162,6 @@
 
     <div class="card">
       <div class="blob-wrap">
-        <!-- FIX: Simplified HTML Structure -->
         <div class="blob" aria-live="polite">
           <div class="blob-visuals"></div>
           <canvas id="waveCanvas"></canvas>
