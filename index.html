@@ -54,43 +54,42 @@
       display:flex;flex-direction:column;align-items:center;justify-content:center;
       gap:20px; text-align:center;
     }
-    /* FIX: The .blob is now the outer container for shape and glow only */
+    /* FIX: The .blob container handles the animated shape and clips content */
     .blob{
       width:min(35vh, 380px); height:min(35vh, 380px);
       position:relative;
-      border-radius: 50%; /* This must be here to guide the animation */
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      border-radius: 50%;
+      background: radial-gradient(circle at 50% 50%, #150522, #000);
       will-change: transform, border-radius;
-      filter: drop-shadow(0 0 25px rgba(238, 0, 255, 0.5)) drop-shadow(0 0 45px rgba(0, 204, 255, 0.4));
+      overflow: hidden; /* This must be on the parent */
+      isolation: isolate; /* Good practice for complex animations */
       animation:
         wobble-organic 15s ease-in-out infinite,
         floaty 12s ease-in-out infinite;
     }
-    
-    /* FIX: This new inner container handles the visuals and clipping */
-    .blob-inner {
-      position: absolute;
-      inset: 0;
-      border-radius: inherit; /* Follows parent shape */
-      overflow: hidden; /* Clips the pseudo-elements */
-      isolation: isolate; /* Creates a clean rendering context */
-      background: radial-gradient(circle at 50% 50%, #150522, #000);
-      display:flex;
-      align-items:center;
-      justify-content:center;
-    }
 
-    /* FIX: Pseudo-elements are now attached to .blob-inner */
-    .blob-inner::before {
+    /* FIX: This pseudo-element now creates the glow reliably */
+    .blob::before {
+      content: '';
+      position: absolute;
+      z-index: -1; /* Sits behind the parent blob */
+      inset: -20px; /* Make it larger to create blur space */
+      border-radius: inherit; /* Copies the animated border-radius */
+      animation: wobble-organic 15s ease-in-out infinite; /* Animates in sync */
+      background: linear-gradient(45deg, #ee00ff, #00ccff);
+      filter: blur(40px); /* Creates the soft glow effect */
+      transition: transform .5s ease-in-out;
+    }
+    
+    /* FIX: Reassigned ::after to be an internal visual layer again */
+    .blob::after {
       content: ''; position: absolute; inset: -100%;
       background: conic-gradient(from 90deg, #ee00ff, #6600ff, #00ccff, #ee00ff);
       animation: spin 15s linear infinite;
-      mix-blend-mode: screen; opacity: 0.9; transition: opacity .5s ease;
-    }
-    .blob-inner::after {
-      content: ''; position: absolute; inset: -50%;
-      background: conic-gradient(from 0deg, transparent, #fff, transparent 40%);
-      animation: spin 22s linear infinite reverse;
-      mix-blend-mode: overlay; opacity: 0.3;
+      mix-blend-mode: screen; opacity: 0.9;
     }
     
     .blob-content { z-index: 10; position: relative; }
@@ -118,20 +117,24 @@
       width: 100%; height: 100%; z-index: 5;
       opacity: 0; transition: opacity .4s ease;
     }
-    
     .blob.listening h1,
     .blob.speaking h1 { opacity: 0.1; }
-
-    /* FIX: Selector updated to target inner element */
-    .blob.listening .blob-inner::before { opacity: 0.4; }
     
+    .blob.listening::after { opacity: 0.4; } /* Fade out internal gradient */
+
     .blob.listening #waveCanvas { opacity: 1; }
 
     .blob.speaking {
       animation:
         wobble-organic 15s ease-in-out infinite,
-        speaking-pulse 1.8s ease-in-out infinite;
+        floaty 12s ease-in-out infinite; /* Speaking state can still float */
     }
+
+    /* FIX: Modified speaking pulse to affect the ::before glow */
+    .blob.speaking::before {
+      transform: scale(1.1);
+    }
+    
     .subtitle{
       color: #b9c1d0; font-size: clamp(17px, 1.6vw, 20px);
       font-weight: 500; max-width:480px; opacity: 0.9;
@@ -148,10 +151,6 @@
       50% { border-radius: 60% 40% 50% 60% / 70% 50% 40% 30%; }
       75% { border-radius: 40% 70% 30% 60% / 60% 40% 70% 30%; }
       100% { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; }
-    }
-    @keyframes speaking-pulse {
-      0%, 100% { transform: translateY(0); filter: drop-shadow(0 0 25px #ee00ff55) drop-shadow(0 0 45px #00ccff44); }
-      50% { transform: translateY(-10px); filter: drop-shadow(0 0 40px #ee00ffaa) drop-shadow(0 0 65px #00ccff88); }
     }
     @keyframes blink {
       0%, 100% { opacity: 1; }
@@ -174,13 +173,10 @@
 
     <div class="card">
       <div class="blob-wrap">
-        <!-- FIX: Outer .blob now contains the .blob-inner -->
         <div class="blob" aria-live="polite">
-          <div class="blob-inner">
-            <canvas id="waveCanvas"></canvas>
-            <div class="blob-content">
-              <h1></h1>
-            </div>
+          <canvas id="waveCanvas"></canvas>
+          <div class="blob-content">
+            <h1></h1>
           </div>
         </div>
         <p class="subtitle">Join us to know more about innovation @EDGE tomorrow from <b>11:30 - 12:30</b> in HQ auditorium</p>
