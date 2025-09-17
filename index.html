@@ -71,23 +71,23 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      /* FIX: New static conic gradient to match screenshot */
       background: conic-gradient(from 180deg at 50% 50%, #00aaff 0%, #a200ff 35%, #f300ff 50%, #a200ff 65%, #00aaff 100%);
       -webkit-mask: radial-gradient(circle, white 80%, transparent 100%);
       mask: radial-gradient(circle, white 80%, transparent 100%);
     }
 
-    /* FIX: Added padding-bottom to shift text upwards */
     .blob-content {
       z-index: 10;
-      position: relative;
-      padding-bottom: 35px;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 100%;
     }
     
     .blob h1 {
       font-family: 'Poppins', sans-serif;
       font-weight: 800;
-      /* FIX: Font size slightly reduced */
       font-size: clamp(18px, 2.8vw, 32px);
       margin: 0 18px;
       color: #e8eef8;
@@ -281,7 +281,7 @@
     resizeCanvas();
     document.addEventListener('DOMContentLoaded', () => {
       const h1 = document.querySelector('.blob h1');
-      const textToType = "Hello, I'm EDGE AI";
+      const textToType = "Hello, I'm BRIDGE AI";
       const typeSpeed = 120;
       const pauseAfterTyping = 1500;
       const pauseBetweenLoops = 10000;
