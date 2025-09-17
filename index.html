@@ -54,32 +54,45 @@
       display:flex;flex-direction:column;align-items:center;justify-content:center;
       gap:20px; text-align:center;
     }
+    /* FIX: The .blob is now the outer container for shape and glow only */
     .blob{
       width:min(35vh, 380px); height:min(35vh, 380px);
-      position:relative; display:flex;align-items:center;justify-content:center;
-      border-radius: 50%;
-      background: radial-gradient(circle at 50% 50%, #150522, #000);
-      will-change: transform, border-radius; overflow: hidden;
+      position:relative;
+      border-radius: 50%; /* This must be here to guide the animation */
+      will-change: transform, border-radius;
       filter: drop-shadow(0 0 25px rgba(238, 0, 255, 0.5)) drop-shadow(0 0 45px rgba(0, 204, 255, 0.4));
-      isolation: isolate; /* FIX #1: Forces correct rendering context */
       animation:
         wobble-organic 15s ease-in-out infinite,
         floaty 12s ease-in-out infinite;
     }
-    .blob::before {
+    
+    /* FIX: This new inner container handles the visuals and clipping */
+    .blob-inner {
+      position: absolute;
+      inset: 0;
+      border-radius: inherit; /* Follows parent shape */
+      overflow: hidden; /* Clips the pseudo-elements */
+      isolation: isolate; /* Creates a clean rendering context */
+      background: radial-gradient(circle at 50% 50%, #150522, #000);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+
+    /* FIX: Pseudo-elements are now attached to .blob-inner */
+    .blob-inner::before {
       content: ''; position: absolute; inset: -100%;
       background: conic-gradient(from 90deg, #ee00ff, #6600ff, #00ccff, #ee00ff);
       animation: spin 15s linear infinite;
       mix-blend-mode: screen; opacity: 0.9; transition: opacity .5s ease;
-      border-radius: inherit; /* FIX #2: Ensures pseudo-element matches parent shape */
     }
-    .blob::after {
+    .blob-inner::after {
       content: ''; position: absolute; inset: -50%;
       background: conic-gradient(from 0deg, transparent, #fff, transparent 40%);
       animation: spin 22s linear infinite reverse;
       mix-blend-mode: overlay; opacity: 0.3;
-      border-radius: inherit; /* FIX #2: Ensures pseudo-element matches parent shape */
     }
+    
     .blob-content { z-index: 10; position: relative; }
     
     .blob h1 {
@@ -105,10 +118,15 @@
       width: 100%; height: 100%; z-index: 5;
       opacity: 0; transition: opacity .4s ease;
     }
+    
     .blob.listening h1,
     .blob.speaking h1 { opacity: 0.1; }
-    .blob.listening::before { opacity: 0.4; }
+
+    /* FIX: Selector updated to target inner element */
+    .blob.listening .blob-inner::before { opacity: 0.4; }
+    
     .blob.listening #waveCanvas { opacity: 1; }
+
     .blob.speaking {
       animation:
         wobble-organic 15s ease-in-out infinite,
@@ -156,10 +174,13 @@
 
     <div class="card">
       <div class="blob-wrap">
+        <!-- FIX: Outer .blob now contains the .blob-inner -->
         <div class="blob" aria-live="polite">
-          <canvas id="waveCanvas"></canvas>
-          <div class="blob-content">
-            <h1></h1>
+          <div class="blob-inner">
+            <canvas id="waveCanvas"></canvas>
+            <div class="blob-content">
+              <h1></h1>
+            </div>
           </div>
         </div>
         <p class="subtitle">Join us to know more about innovation @EDGE tomorrow from <b>11:30 - 12:30</b> in HQ auditorium</p>
@@ -274,7 +295,7 @@
     resizeCanvas();
     document.addEventListener('DOMContentLoaded', () => {
       const h1 = document.querySelector('.blob h1');
-      const textToType = "Hello, I'm BRIDGE AI";
+      const textToType = "Hello, I'm EDGE AI";
       const typeSpeed = 120;
       const pauseAfterTyping = 1500;
       const pauseBetweenLoops = 10000;
