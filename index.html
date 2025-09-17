@@ -53,45 +53,36 @@
     .blob-wrap{
       display:flex;flex-direction:column;align-items:center;justify-content:center;
       gap:20px; text-align:center;
+      position: relative; /* Needed for z-indexing glow correctly */
     }
-    /* FIX: The .blob container handles the animated shape and clips content */
-    .blob{
+    /* FIX: The .blob container handles the animated shape and glowing filter only. */
+    .blob {
       width:min(35vh, 380px); height:min(35vh, 380px);
       position:relative;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      border-radius: 50%;
-      background: radial-gradient(circle at 50% 50%, #150522, #000);
-      will-change: transform, border-radius;
-      overflow: hidden; /* This must be on the parent */
-      isolation: isolate; /* Good practice for complex animations */
+      filter: drop-shadow(0 0 25px rgba(238, 0, 255, 0.5)) drop-shadow(0 0 45px rgba(0, 204, 255, 0.4));
       animation:
         wobble-organic 15s ease-in-out infinite,
         floaty 12s ease-in-out infinite;
     }
 
-    /* FIX: This pseudo-element now creates the glow reliably */
-    .blob::before {
-      content: '';
+    /* FIX: This new element holds the colors and is MASKED, not clipped. */
+    .blob-visuals {
       position: absolute;
-      z-index: -1; /* Sits behind the parent blob */
-      inset: -20px; /* Make it larger to create blur space */
-      border-radius: inherit; /* Copies the animated border-radius */
-      animation: wobble-organic 15s ease-in-out infinite; /* Animates in sync */
-      background: linear-gradient(45deg, #ee00ff, #00ccff);
-      filter: blur(40px); /* Creates the soft glow effect */
-      transition: transform .5s ease-in-out;
-    }
-    
-    /* FIX: Reassigned ::after to be an internal visual layer again */
-    .blob::after {
-      content: ''; position: absolute; inset: -100%;
+      inset: 0;
+      border-radius: inherit; /* Copies animated border-radius from parent */
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      
       background: conic-gradient(from 90deg, #ee00ff, #6600ff, #00ccff, #ee00ff);
-      animation: spin 15s linear infinite;
-      mix-blend-mode: screen; opacity: 0.9;
+      mix-blend-mode: screen; /* Lighten effect */
+
+      /* This is the key to the bug fix. It masks the element instead of clipping it. */
+      -webkit-mask: radial-gradient(circle, white, white, rgba(255,255,255,.2) 90%, transparent 100%);
+      mask: radial-gradient(circle, white, white, rgba(255,255,255,.2) 90%, transparent 100%);
+      animation: spin 15s linear infinite reverse; /* Gives the internal swirl */
     }
-    
+
     .blob-content { z-index: 10; position: relative; }
     
     .blob h1 {
@@ -116,25 +107,19 @@
       position: absolute; top: 0; left: 0;
       width: 100%; height: 100%; z-index: 5;
       opacity: 0; transition: opacity .4s ease;
+      mix-blend-mode: overlay; /* Blends better with new bg */
     }
     .blob.listening h1,
     .blob.speaking h1 { opacity: 0.1; }
     
-    .blob.listening::after { opacity: 0.4; } /* Fade out internal gradient */
+    .blob.listening .blob-visuals { opacity: 0.4; } 
 
     .blob.listening #waveCanvas { opacity: 1; }
-
-    .blob.speaking {
-      animation:
-        wobble-organic 15s ease-in-out infinite,
-        floaty 12s ease-in-out infinite; /* Speaking state can still float */
-    }
-
-    /* FIX: Modified speaking pulse to affect the ::before glow */
-    .blob.speaking::before {
-      transform: scale(1.1);
-    }
     
+    .blob.speaking {
+      animation: wobble-organic 15s ease-in-out infinite, speaking-pulse 1.8s ease-in-out infinite;
+    }
+
     .subtitle{
       color: #b9c1d0; font-size: clamp(17px, 1.6vw, 20px);
       font-weight: 500; max-width:480px; opacity: 0.9;
@@ -151,6 +136,11 @@
       50% { border-radius: 60% 40% 50% 60% / 70% 50% 40% 30%; }
       75% { border-radius: 40% 70% 30% 60% / 60% 40% 70% 30%; }
       100% { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; }
+    }
+    /* Speaking pulse now affects the main blob's filter, which is reliable */
+    @keyframes speaking-pulse {
+      0%, 100% { transform: translateY(0); filter: drop-shadow(0 0 25px rgba(238,0,255,0.5)) drop-shadow(0 0 45px rgba(0,204,255,0.4)); }
+      50% { transform: translateY(-10px); filter: drop-shadow(0 0 40px rgba(238,0,255,0.8)) drop-shadow(0 0 65px rgba(0,204,255,0.6)); }
     }
     @keyframes blink {
       0%, 100% { opacity: 1; }
@@ -173,7 +163,9 @@
 
     <div class="card">
       <div class="blob-wrap">
+        <!-- FIX: Simplified HTML Structure -->
         <div class="blob" aria-live="polite">
+          <div class="blob-visuals"></div>
           <canvas id="waveCanvas"></canvas>
           <div class="blob-content">
             <h1></h1>
