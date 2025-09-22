@@ -1,5 +1,8 @@
 export const config = { runtime: 'edge' };
-// ---------- AUDIO UNLOCK ----------
+
+/* =========================
+   AUDIO UNLOCK (unchanged)
+   ========================= */
 let audioCtx;
 export function unlockAudio() {
   try {
@@ -8,36 +11,37 @@ export function unlockAudio() {
   } catch {}
 }
 
-// ---------- TTS (female-preferred) ----------
+/* =========================
+   TTS (female-preferred) (unchanged)
+   ========================= */
 let isSpeaking = false;
 const PREFERRED_VOICES = [
-  'Google UK English Female',      // Chrome voice (female)
+  'Google UK English Female',
   'Microsoft Emily Online (Natural)',
   'Microsoft Aria Online (Natural)',
-  'Samantha', 'Victoria',          // macOS voices
-  'Zira',                          // Windows legacy female
+  'Samantha', 'Victoria',
+  'Zira',
 ];
 
 function pickFemaleVoice() {
   const voices = speechSynthesis.getVoices() || [];
   for (const want of PREFERRED_VOICES) {
-    const v = voices.find(x => x.name.includes(want));
+    const v = voices.find(x => x.name && x.name.includes(want));
     if (v) return v;
   }
-  // fallback: first English-ish voice that looks female
-  return voices.find(v => /en/i.test(v.lang) && /female/i.test(v.name)) || voices[0];
+  return voices.find(v => /en/i.test(v.lang) && /female/i.test(v.name || '')) || voices[0];
 }
 
 export function speak(text, rate = 1.0) {
-  if (!('speechSynthesis' in window)) return;
-  stopSTT(); // half-duplex: stop listening while we speak
+  if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
+  stopSTT(); // half-duplex
   unlockAudio();
 
   const u = new SpeechSynthesisUtterance(text);
   u.rate = rate;
+
   const setV = () => { const v = pickFemaleVoice(); if (v) u.voice = v; };
 
-  // voices may load async the first time
   if (speechSynthesis.getVoices().length === 0) {
     speechSynthesis.onvoiceschanged = () => setV();
   } else setV();
@@ -46,21 +50,23 @@ export function speak(text, rate = 1.0) {
   u.onend = () => { isSpeaking = false; if (voiceOn) startSTT(800); };
   u.onerror = () => { isSpeaking = false; if (voiceOn) startSTT(800); };
 
-  speechSynthesis.cancel();      // clear any queue
+  speechSynthesis.cancel();
   speechSynthesis.speak(u);
 }
 
-// ---------- STT (robust for Chromium 89/Electron 12) ----------
+/* =========================
+   STT (unchanged)
+   ========================= */
 let rec, recActive = false, voiceOn = false;
 let partial = '';
 
 function newRecognizer() {
-  const SR = window.webkitSpeechRecognition || window.SpeechRecognition;
+  const SR = typeof window !== 'undefined' && (window.webkitSpeechRecognition || window.SpeechRecognition);
   if (!SR) return null;
   const r = new SR();
   r.lang = 'en-US';
   r.interimResults = true;
-  r.continuous = true;               // needed for older Chrome
+  r.continuous = true;
   r.maxAlternatives = 1;
 
   r.onresult = (e) => {
@@ -68,7 +74,7 @@ function newRecognizer() {
     for (let i = e.resultIndex; i < e.results.length; i++) {
       const res = e.results[i];
       if (res.isFinal) finalChunk += res[0].transcript;
-      else partial = res[0].transcript;  // you can show this if you want
+      else partial = res[0].transcript;
     }
     if (finalChunk.trim()) {
       handleUserSpeech(finalChunk.trim());
@@ -76,16 +82,13 @@ function newRecognizer() {
     }
   };
 
-  // Chrome 89 sometimes never fires onsoundend; guard with onend:
   r.onend = () => {
     recActive = false;
-    // if we didn't just end because we started speaking, keep listening
     if (voiceOn && !isSpeaking) startSTT(250);
   };
 
   r.onerror = (ev) => {
     recActive = false;
-    // 'aborted' is normal when we stop to speak; anything else, back-off restart
     if (ev.error !== 'aborted') setTimeout(() => voiceOn && startSTT(800), 1000);
   };
 
@@ -102,7 +105,6 @@ export function startSTT(delay = 0) {
       recActive = true;
     } catch (e) {
       recActive = false;
-      // Already started? try again shortly
       setTimeout(() => voiceOn && startSTT(500), 600);
     }
   }, delay);
@@ -118,20 +120,19 @@ export function stopSTT() {
 export function toggleVoice(on) {
   voiceOn = on;
   if (on) { unlockAudio(); startSTT(150); }
-  else    { stopSTT(); speechSynthesis.cancel(); }
+  else    { stopSTT(); if (typeof speechSynthesis !== 'undefined') speechSynthesis.cancel(); }
 }
 
 // called when we got a final transcript
 async function handleUserSpeech(text) {
-  // de-dupe quick repeats
+  if (typeof window === 'undefined') return;
+
   if (window.__lastUtterance === text) return;
   window.__lastUtterance = text;
 
-  // push to UI + history as a user message (your existing function)
   push('user', text);
   history.push({ role: 'user', content: text });
 
-  // send to your /api/chat (unchanged):
   try {
     const res = await postJSON('/api/chat', { messages: history });
     const raw = res.reply || '[no reply]';
@@ -144,12 +145,57 @@ async function handleUserSpeech(text) {
   }
 }
 
-// hard cap to ~100 words (your existing helper)
 export function limitWords(s, n = 100) {
   const words = String(s || '').trim().split(/\s+/);
   return words.length > n ? words.slice(0, n).join(' ') + '…' : s;
 }
 
+/* =========================
+   SIMPLE UI INTEGRATION (NEW)
+   ========================= */
+function byId(id) { return typeof document !== 'undefined' ? document.getElementById(id) : null; }
+function qp(name) {
+  if (typeof window === 'undefined') return null;
+  return new URLSearchParams(window.location.search).get(name);
+}
+
+// Attach once in browser only
+if (typeof window !== 'undefined') {
+  // 1) Unlock audio on first interaction (needed on iOS)
+  const firstTap = () => { unlockAudio(); window.removeEventListener('pointerdown', firstTap, { passive: true }); };
+  window.addEventListener('pointerdown', firstTap, { passive: true });
+
+  // 2) Wire up the Speak button if present
+  window.addEventListener('DOMContentLoaded', () => {
+    const btn = byId('speakBtn');
+    const input = byId('text');
+
+    if (btn) {
+      btn.addEventListener('click', () => {
+        const phrase = (input && input.value) || 'Hello from EDGE!';
+        speak(phrase);
+      });
+    }
+
+    // 3) Optional: ?say=Hello — will auto-fill and speak on first tap
+    const say = qp('say');
+    if (say && input) input.value = say;
+
+    // Expose for quick console tests on the iPad:
+    window.edgeTTS = { speak, toggleVoice, startSTT, stopSTT, unlockAudio };
+  });
+
+  // 4) Ensure voices are populated on Safari/iOS before first speak
+  if ('speechSynthesis' in window) {
+    const prewarm = () => { speechSynthesis.getVoices(); };
+    window.addEventListener('load', prewarm, { once: true });
+    speechSynthesis.onvoiceschanged = () => {}; // triggers voice list population in some browsers
+  }
+}
+
+/* =========================
+   Vercel Edge API (unchanged)
+   ========================= */
 export default async function handler(req) {
   if (req.method !== 'POST') {
     return new Response(JSON.stringify({ error: 'Use POST' }), { status: 405, headers: { 'content-type': 'application/json' } });
@@ -190,7 +236,6 @@ export default async function handler(req) {
 
     const txt = await r.text();
     if (!r.ok) {
-      // surface real Groq error up to the UI for easier debugging
       return new Response(JSON.stringify({ error: `Groq ${r.status}`, detail: txt }), {
         status: r.status, headers: { 'content-type': 'application/json' }
       });

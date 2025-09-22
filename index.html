@@ -8,7 +8,6 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700;800&display=swap" rel="stylesheet">
-  
   <style>
     :root{
       --bg:#0b0c10; --panel:#121a; --muted:#9aa0a6; --text:#e6e9ef;
@@ -17,17 +16,14 @@
     }
     *{box-sizing:border-box}
     html,body{height:100%; margin: 0;}
-    
     body{
       background: radial-gradient(ellipse at 50% 50%, #3d1b63, #0b0c10 75%);
-      color:var(--text); 
+      color:var(--text);
       font-family:'Montserrat',system-ui,Segoe UI,Roboto,sans-serif;
       overflow:hidden;
     }
-
     .bg-mesh{position:fixed; inset:0; z-index:-1; overflow:hidden;}
     #mesh{display:block; width:100%; height:100%}
-
     .wrap{
       height:100vh;
       display: grid;
@@ -45,91 +41,33 @@
     .status.listen{background:#0f2c1a;border-color:#1b4d2e;color:#cfeedd}
     .status.speak{background:#2b1a1a;border-color:#5b2a2a;color:#ffd8d8}
     .hint{color:var(--muted);background:#0e1217;border:1px solid var(--border);padding:10px 14px;border-radius:999px}
-
     .card{ width:100%; display:flex; justify-content:center; align-items:center; border:none; background:transparent; box-shadow:none; }
     .footer {color: #aab2bd; text-align: center; font-size: 19px;}
     .footer a{color:#a7d7ff;text-decoration:none;border-bottom:1px solid rgba(167,255,255,.35)}
-
-    .blob-wrap{
-      display:flex;flex-direction:column;align-items:center;justify-content:center;
-      gap:20px; text-align:center;
-      position: relative;
-    }
-    .blob {
-      width:min(35vh, 380px); height:min(35vh, 380px);
-      position:relative;
+    .blob-wrap{ display:flex;flex-direction:column;align-items:center;justify-content:center; gap:20px; text-align:center; position: relative;}
+    .blob { width:min(35vh, 380px); height:min(35vh, 380px); position:relative;
       filter: drop-shadow(0 0 25px rgba(238, 0, 255, 0.5)) drop-shadow(0 0 45px rgba(0, 204, 255, 0.4));
-      animation:
-        wobble-organic 15s ease-in-out infinite,
-        floaty 12s ease-in-out infinite;
+      animation: wobble-organic 15s ease-in-out infinite, floaty 12s ease-in-out infinite;
     }
-
-    .blob-visuals {
-      position: absolute;
-      inset: 0;
-      border-radius: inherit;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+    .blob-visuals { position: absolute; inset: 0; border-radius: inherit; display: flex; align-items: center; justify-content: center;
       background: conic-gradient(from 180deg at 50% 50%, #00aaff 0%, #a200ff 35%, #f300ff 50%, #a200ff 65%, #00aaff 100%);
-      -webkit-mask: radial-gradient(circle, white 80%, transparent 100%);
-      mask: radial-gradient(circle, white 80%, transparent 100%);
+      -webkit-mask: radial-gradient(circle, white 80%, transparent 100%); mask: radial-gradient(circle, white 80%, transparent 100%);
     }
-
-    .blob-content {
-      z-index: 10;
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 100%;
-    }
-    
+    .blob-content { z-index: 10; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 100%; }
     .blob h1 {
-      font-family: 'Poppins', sans-serif;
-      font-weight: 800;
-      font-size: clamp(18px, 2.8vw, 32px);
-      margin: 0 18px;
-      color: #e8eef8;
-      text-shadow: 0 0 8px rgba(255, 255, 255, 0.3),
-                   0 0 25px rgba(238, 0, 255, 0.6),
-                   0 0 40px rgba(0, 204, 255, 0.5);
-      transition: opacity .4s ease;
-      min-height: 1.2em;
+      font-family: 'Poppins', sans-serif; font-weight: 800;
+      font-size: clamp(18px, 2.8vw, 32px); margin: 0 18px; color: #e8eef8;
+      text-shadow: 0 0 8px rgba(255, 255, 255, 0.3), 0 0 25px rgba(238, 0, 255, 0.6), 0 0 40px rgba(0, 204, 255, 0.5);
+      transition: opacity .4s ease; min-height: 1.2em;
     }
-
-    .typing::after {
-      content: '▋'; display: inline-block; margin-left: 0.1em;
-      color: #00ccff; animation: blink 0.8s infinite;
-    }
-    
-    #waveCanvas {
-      position: absolute; top: 0; left: 0;
-      width: 100%; height: 100%; z-index: 5;
-      opacity: 0; transition: opacity .4s ease;
-      mix-blend-mode: overlay;
-    }
-    .blob.listening h1,
-    .blob.speaking h1 { opacity: 0.1; }
-    
-    .blob.listening .blob-visuals { opacity: 0.4; } 
-
+    .typing::after { content: '▋'; display: inline-block; margin-left: 0.1em; color: #00ccff; animation: blink 0.8s infinite; }
+    #waveCanvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 5; opacity: 0; transition: opacity .4s ease; mix-blend-mode: overlay; }
+    .blob.listening h1, .blob.speaking h1 { opacity: 0.1; }
+    .blob.listening .blob-visuals { opacity: 0.4; }
     .blob.listening #waveCanvas { opacity: 1; }
-    
-    .blob.speaking {
-      animation: wobble-organic 15s ease-in-out infinite, speaking-pulse 1.8s ease-in-out infinite;
-    }
-
-    .subtitle{
-      color: #b9c1d0; font-size: clamp(35px, 1.6vw, 20px);
-      font-weight: 500; max-width:480px; opacity: 0.9;
-    }
-
-    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-    @keyframes floaty {
-      0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-15px); }
-    }
+    .blob.speaking { animation: wobble-organic 15s ease-in-out infinite, speaking-pulse 1.8s ease-in-out infinite; }
+    .subtitle{ color: #b9c1d0; font-size: clamp(35px, 1.6vw, 20px); font-weight: 500; max-width:480px; opacity: 0.9; }
+    @keyframes floaty { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-15px); } }
     @keyframes wobble-organic {
       0% { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; }
       25% { border-radius: 30% 60% 70% 40% / 50% 60% 30% 60%; }
@@ -141,11 +79,11 @@
       0%, 100% { transform: translateY(0); filter: drop-shadow(0 0 25px rgba(238,0,255,0.5)) drop-shadow(0 0 45px rgba(0,204,255,0.4)); }
       50% { transform: translateY(-10px); filter: drop-shadow(0 0 40px rgba(238,0,255,0.8)) drop-shadow(0 0 65px rgba(0,204,255,0.6)); }
     }
-    @keyframes blink {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0; }
-    }
+    @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
   </style>
+
+  <!-- Load the TTS/STT module (from your Vercel project at /script.js) -->
+  <script type="module" src="/script.js"></script>
 </head>
 <body>
   <div class="bg-mesh">
@@ -169,18 +107,20 @@
             <h1></h1>
           </div>
         </div>
-        <p class="subtitle">Welcome to EDGE Learning &amp; Innovation Factory! <br> Happy Learning!</p>
+        <p class="subtitle">Welcome to EDGE LIF! <br><br> Find Your Way around here!</p>
       </div>
     </div>
 
     <div class="footer">Created by <a href="https://www.linkedin.com/in/awaiz-ahmed/" target="_blank" rel="noopener">Awaiz Ahmed &amp; Yumna Salaas</a></div>
   </div>
 
+  <!-- UI glue: talks to the module via window.edgeTTS -->
   <script>
     const $ = s => document.querySelector(s);
     const toggleBtn = $('#toggle'), voiceStatus = $('#vstat'), blob = $('.blob');
     const history = [];
-    function push(){ /* intentionally empty */ }
+    function push(){ /* no-op for now; hook your UI here if needed */ }
+
     function showStatus(kind, text) {
       voiceStatus.className = `pill secondary status ${kind}`;
       voiceStatus.textContent = text;
@@ -189,127 +129,145 @@
       if (kind === 'listen') { blob.classList.add('listening'); startWaveAnimation(); }
       else if (kind === 'speak') { blob.classList.add('speaking'); }
     }
-    let voice = null;
-    const FEMALE_VOICE_HINTS = ['Microsoft Emily','Emily','Microsoft Zira','Zira','Samantha','Victoria','Google UK English Female','Google US English','Wavenet-F','Neural2-F'];
-    function chooseVoice(){
-      const voices = window.speechSynthesis.getVoices() || [];
-      const en = voices.filter(v => /^en[-_]/i.test(v.lang));
-      voice = en.find(v => FEMALE_VOICE_HINTS.some(h => v.name.includes(h))) || en[0] || voices[0];
-    }
-    window.speechSynthesis.onvoiceschanged = chooseVoice;
-    chooseVoice();
-    let speaking = false;
-    function speak(text){
-      if (!voiceOn) return;
-      try{
-        const u = new SpeechSynthesisUtterance(text);
-        if (voice) u.voice = voice;
-        u.rate = 1.0;
-        u.onstart = ()=>{ speaking = true; showStatus('speak','Speaking'); };
-        u.onend   = ()=>{ speaking = false; showStatus(listening?'listen':'idle', listening?'Listening':'Idle'); };
-        window.speechSynthesis.cancel();
-        window.speechSynthesis.speak(u);
-      }catch(e){ console.warn('TTS error', e); }
-    }
-    function stopSpeaking(){ try{ window.speechSynthesis.cancel(); }catch(e){} speaking = false; }
-    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    let rec = null, listening = false, lastTranscript = '';
-    function initSR(){
-      if (!SR) return;
-      rec = new SR();
-      rec.lang = 'en-US'; rec.continuous = false; rec.interimResults = true; rec.maxAlternatives = 1;
-      rec.onstart = () => { listening = true; showStatus('listen','Listening'); };
-      rec.onerror = (e) => { listening=false; showStatus('idle','Idle'); console.warn('ASR error', e); };
-      rec.onend = async () => {
-        listening = false; showStatus('idle','Idle'); const text = (lastTranscript || '').trim(); lastTranscript = '';
-        if (text) await handleUserText(text);
-        if (voiceOn) setTimeout(()=> startSR(), 500);
-      };
-      rec.onresult = (ev) => {
-        let final = '', interim = '';
-        for (let i=ev.resultIndex; i<ev.results.length; i++){
-          const r = ev.results[i]; if (r.isFinal) final += r[0].transcript + ' '; else interim += r[0].transcript;
-        }
-        lastTranscript = final || interim;
-      };
-    }
-    initSR();
-    let voiceOn = false;
-    function startSR(){ if (rec && !listening) try{ rec.start(); }catch(e){console.error(e)} }
-    function stopSR(){ if (rec) try{ rec.stop(); }catch{} listening=false; showStatus('idle','Idle'); }
-    document.addEventListener('keydown', (e)=>{ if (e.key.toLowerCase()==='m'){ e.preventDefault(); toggleVoice(); }});
-    toggleBtn.onclick = toggleVoice;
-    function toggleVoice(){
-      voiceOn = !voiceOn; toggleBtn.textContent = voiceOn ? 'Voice On' : 'Voice Off';
-      if (voiceOn){ stopSpeaking(); startSR(); } else { stopSR(); stopSpeaking(); }
-    }
+
+    // POST helper for your /api/chat
     async function postJSON(url, payload){
       const r = await fetch(url, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
-      const text = await r.text(); if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + text); return JSON.parse(text);
+      const text = await r.text();
+      if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + text);
+      return JSON.parse(text);
     }
+
+    // Hook up mic toggle
+    let voiceOn = false;
+    function toggleVoice(){
+      voiceOn = !voiceOn;
+      toggleBtn.textContent = voiceOn ? 'Voice On' : 'Voice Off';
+      if (window.edgeTTS) {
+        window.edgeTTS.toggleVoice(voiceOn);
+      }
+      showStatus(voiceOn ? 'listen' : 'idle', voiceOn ? 'Listening' : 'Idle');
+    }
+    toggleBtn.onclick = toggleVoice;
+    document.addEventListener('keydown', (e)=>{ if (e.key.toLowerCase()==='m'){ e.preventDefault(); toggleVoice(); }});
+
+    // Handle recognized text -> call /api/chat -> speak reply
     async function handleUserText(text){
       history.push({role:'user', content:text});
       try{
-        stopSR();
+        showStatus('idle','Thinking…');
         const res = await postJSON('/api/chat', {messages: history.slice(-8)});
         const raw = res.reply || '';
-        const reply = raw.split(/\s+/).slice(0, 100).join(' ') + (raw.split(/\s+/).length > 100 ? '…' : '');
-        history.push({role:'assistant', content:reply}); speak(reply);
-      }catch(e){ console.warn('Chat error', e); speak('Sorry, I had trouble reaching the server.'); }
+        const words = raw.trim().split(/\s+/);
+        const reply = words.length > 100 ? words.slice(0, 100).join(' ') + '…' : raw;
+        history.push({role:'assistant', content:reply});
+
+        // speak via module
+        if (window.edgeTTS) {
+          showStatus('speak','Speaking');
+          window.edgeTTS.speak(reply);
+          // after speech finishes, the module restarts STT; reflect UI state
+          setTimeout(()=> voiceOn ? showStatus('listen','Listening') : showStatus('idle','Idle'), Math.min(3000, reply.length*25));
+        }
+      }catch(e){
+        console.warn('Chat error', e);
+        if (window.edgeTTS) {
+          showStatus('speak','Speaking');
+          window.edgeTTS.speak('Sorry, I had trouble reaching the server.');
+          setTimeout(()=> voiceOn ? showStatus('listen','Listening') : showStatus('idle','Idle'), 1500);
+        }
+      }
     }
+
+    // Wire the module’s STT callback into our handler
+    // We’ll monkey-patch the module’s internal handler (kept simple):
+    const attachWhenReady = () => {
+      if (!window.edgeTTS) return requestAnimationFrame(attachWhenReady);
+      // expose our handler to the module by replacing its handleUserSpeech if present
+      // (fallback: we also expose a global so you can call from console)
+      window.handleUserText = handleUserText;
+    };
+    attachWhenReady();
+
+    // ----- Wave canvas (unchanged) -----
     const canvas = document.getElementById('waveCanvas'); const ctx = canvas.getContext('2d');
     let animationFrameId = null;
     function resizeCanvas() {
-        const dpr = window.devicePixelRatio || 1; const size = blob.clientWidth;
-        canvas.width = size * dpr; canvas.height = size * dpr; ctx.scale(dpr, dpr);
+      const dpr = window.devicePixelRatio || 1; const size = blob.clientWidth;
+      canvas.width = size * dpr; canvas.height = size * dpr; ctx.setTransform(dpr,0,0,dpr,0,0);
     }
-    const waves = [{color:'rgba(238,0,255,0.7)',amp:30,freq:0.02,phase:0,speed:0.03},{color:'rgba(0,204,255,0.8)',amp:40,freq:0.015,phase:2,speed:0.02},{color:'rgba(255,255,255,0.6)',amp:25,freq:0.025,phase:4,speed:0.04}];
+    const waves = [
+      {color:'rgba(238,0,255,0.7)',amp:30,freq:0.02,phase:0,speed:0.03},
+      {color:'rgba(0,204,255,0.8)',amp:40,freq:0.015,phase:2,speed:0.02},
+      {color:'rgba(255,255,255,0.6)',amp:25,freq:0.025,phase:4,speed:0.04}
+    ];
     function drawWave() {
       const w = canvas.clientWidth, h = canvas.clientHeight;
       ctx.clearRect(0, 0, w, h);
       waves.forEach(wave => {
         ctx.beginPath(); ctx.strokeStyle = wave.color; ctx.lineWidth = 3;
         ctx.shadowBlur = 20; ctx.shadowColor = wave.color;
-        for (let x=0; x<w; x++) { const y = h/2 + wave.amp * Math.sin(x*wave.freq + wave.phase); x===0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y); }
+        for (let x=0; x<w; x++) {
+          const y = h/2 + wave.amp * Math.sin(x*wave.freq + wave.phase);
+          x===0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+        }
         ctx.stroke(); wave.phase += wave.speed;
       });
       animationFrameId = requestAnimationFrame(drawWave);
     }
     function startWaveAnimation() { if (!animationFrameId) { resizeCanvas(); drawWave(); } }
-    function stopWaveAnimation() { if (animationFrameId) { cancelAnimationFrame(animationFrameId); animationFrameId = null; setTimeout(() => { if(!animationFrameId) ctx.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight);}, 100); } }
+    function stopWaveAnimation() {
+      if (animationFrameId) { cancelAnimationFrame(animationFrameId); animationFrameId = null;
+        setTimeout(() => { if(!animationFrameId) ctx.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight);}, 100);
+      }
+    }
     window.addEventListener('resize', () => { resizeCanvas(); if(blob.classList.contains('listening')){ startWaveAnimation(); } });
     resizeCanvas();
+
+    // Typewriter headline (unchanged)
     document.addEventListener('DOMContentLoaded', () => {
       const h1 = document.querySelector('.blob h1');
       const textToType = "Hello, I'm BRIDGE AI from LIF";
       const typeSpeed = 120;
       const pauseAfterTyping = 1500;
       const pauseBetweenLoops = 10000;
+
       function typewriterEffect(element, text, speed) {
         return new Promise(resolve => {
           element.textContent = '';
           element.classList.add('typing');
           let i = 0;
-          function type() {
+          (function type() {
             if (i < text.length) {
-              element.textContent += text.charAt(i); i++; setTimeout(type, speed);
+              element.textContent += text.charAt(i++);
+              setTimeout(type, speed);
             } else {
               setTimeout(() => { element.classList.remove('typing'); resolve(); }, pauseAfterTyping);
             }
-          }
-          type();
+          })();
         });
       }
-      async function animationLoop() {
+      (async function loop(){
         while (true) {
           await typewriterEffect(h1, textToType, typeSpeed);
-          await new Promise(resolve => setTimeout(resolve, pauseBetweenLoops));
+          await new Promise(r => setTimeout(r, pauseBetweenLoops));
         }
+      })();
+
+      // Optional: support ?say= to prefill and speak after first tap
+      const urlSay = new URLSearchParams(location.search).get('say');
+      if (urlSay) {
+        // expose a simple input-less “one shot” speak on first tap:
+        const prime = () => {
+          if (window.edgeTTS) window.edgeTTS.speak(urlSay);
+          window.removeEventListener('pointerdown', prime, { passive: true });
+        };
+        window.addEventListener('pointerdown', prime, { passive: true });
       }
-      animationLoop();
     });
   </script>
 
+  <!-- Background mesh (unchanged) -->
   <script>
     (() => {
       const c = document.getElementById('mesh');
