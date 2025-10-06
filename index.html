@@ -1,460 +1,277 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>EdVance AI — AAU Tutor Chat</title>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>EdVance AI — AAU Tutor</title>
 
-  <!-- Fonts -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;700;800&display=swap" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700;800&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@700;800&family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
 
-  <style>
-    :root{
-      /* Light, student-friendly palette with cyberpunk accents */
-      --bg:#ffffff; 
-      --surface:#f7f8fc;
-      --text:#0f1720;
-      --muted:#64748b;
-      --border:#e6e8ef;
+<style>
+  :root{
+    --bg:#ffffff; --text:#0f1720; --muted:#64748b; --border:#e8eaf0;
+    --violet:#7c3aed; --cyan:#06b6d4; --pink:#f43f5e;
+    --shadow:0 10px 24px rgba(2,6,23,.08);
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0}
+  body{background:var(--bg);color:var(--text);font-family:'Montserrat',system-ui,Segoe UI,Roboto,sans-serif}
 
-      /* Neon gradient accents */
-      --accent-a:#7c3aed;   /* violet */
-      --accent-b:#06b6d4;   /* cyan */
-      --accent-c:#f43f5e;   /* pink/red */
-      --success:#16a34a;
-      --danger:#ef4444;
+  .top{
+    display:flex; align-items:center; justify-content:space-between; gap:12px;
+    padding:18px 16px; border-bottom:1px solid var(--border);
+  }
+  .brand{display:flex;align-items:center;gap:10px}
+  .logo{height:42px}
+  .title h1{font:800 18px 'Poppins',sans-serif; margin:0}
+  .tagline{font-size:12px; color:var(--muted)}
 
-      /* Shadows / glow */
-      --glow: 0 0 24px rgba(124,58,237,.35), 0 0 54px rgba(6,182,212,.25);
-      --card-shadow: 0 10px 30px rgba(2,6,23,.08);
-    }
+  .wrap{max-width:980px; margin:24px auto; padding:0 16px}
+  .card{display:grid; grid-template-columns:1.1fr .9fr; gap:18px}
+  @media (max-width:900px){ .card{grid-template-columns:1fr} }
 
-    *{ box-sizing: border-box }
-    html,body{ height:100%; margin:0 }
-    body{
-      background: var(--bg);
-      color: var(--text);
-      font-family: 'Montserrat', system-ui, Segoe UI, Roboto, sans-serif;
-      overflow:hidden;
-    }
+  .hero{
+    border:1px solid var(--border); border-radius:18px; padding:18px; box-shadow:var(--shadow);
+    background:
+      radial-gradient(120% 120% at 10% 0%, rgba(124,58,237,.08) 0%, transparent 55%),
+      radial-gradient(140% 120% at 100% 0%, rgba(6,182,212,.08) 0%, transparent 60%),
+      #fff;
+  }
+  .hero h2{font:800 clamp(22px,3.4vw,32px) 'Poppins',sans-serif; margin:0 0 6px}
+  .hero p{margin:0 0 12px; color:var(--muted)}
 
-    /* Subtle animated gradient header strip for “cyberpunky” flavor */
-    .top-strip{
-      position:fixed; inset:0 0 auto 0; height:8px; z-index:1000;
-      background: linear-gradient(90deg,var(--accent-a),var(--accent-b),var(--accent-c),var(--accent-a));
-      background-size: 300% 100%;
-      animation: stripeMove 8s linear infinite;
-      box-shadow: var(--glow);
-    }
-    @keyframes stripeMove{ 0%{background-position:0% 0} 100%{background-position:300% 0} }
+  .orb{
+    width:min(36vh,320px); aspect-ratio:1/1; margin:12px auto 0; position:relative; border-radius:50%;
+    background: conic-gradient(from 180deg,var(--violet),var(--cyan),var(--pink),var(--violet));
+    filter: contrast(110%);
+    animation: hue 12s linear infinite, floaty 9s ease-in-out infinite;
+    box-shadow: 0 0 20px rgba(124,58,237,.25), 0 0 30px rgba(6,182,212,.2);
+    overflow:hidden;
+  }
+  .orb::after{
+    content:""; position:absolute; inset:10%; border-radius:50%;
+    background:#fff; mix-blend-mode:screen; opacity:.65;
+  }
+  @keyframes hue{0%{filter:hue-rotate(0)}100%{filter:hue-rotate(360deg)}}
+  @keyframes floaty{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
 
-    .wrap{
-      height:100vh;
-      display:grid;
-      grid-template-rows:auto 1fr auto;
-      gap:18px; padding:18px clamp(16px,3vw,28px);
-    }
+  /* moved headline up + brighter color + above canvas */
+  #wave{position:absolute; inset:0; opacity:0; transition:opacity .3s; z-index:1}
+  .headline {
+  position: absolute;
+  top: 50%;                   /* centers vertically */
+  left: 50%;                  /* centers horizontally */
+  transform: translate(-50%, -50%);  /* perfect center */
+  width: 80%;
+  text-align: center;
+  font: 800 clamp(16px, 2.6vw, 22px) 'Poppins', sans-serif;
+  color: #ffffff;
+  text-shadow:
+    0 0 2px rgba(0, 0, 0, .35),
+    0 2px 10px rgba(0, 0, 0, .35),
+    0 0 18px rgba(124, 58, 237, .45),
+    0 0 28px rgba(6, 182, 212, .35);
+  z-index: 2;
+  pointer-events: none;
+}
 
-    /* Topbar */
-    .topbar{
-      display:flex; align-items:center; gap:12px; justify-content:space-between; flex-wrap:wrap;
-      background: linear-gradient(180deg, #fff, #fafbff);
-      border:1px solid var(--border);
-      border-radius:16px; padding:10px 14px; box-shadow: var(--card-shadow);
-    }
-    .brand{
-      display:flex; align-items:center; gap:12px;
-    }
-    .logo{
-      height:48px; width:auto; object-fit:contain;
-      filter: drop-shadow(0 6px 18px rgba(124,58,237,.25));
-    }
-    .title{
-      line-height:1.1;
-    }
-    .title h1{
-      font-family:'Poppins',sans-serif; font-weight:800; font-size:18px; margin:0;
-      letter-spacing:.2px;
-      background: linear-gradient(90deg,var(--accent-a),var(--accent-b));
-      -webkit-background-clip:text; background-clip:text; color:transparent;
-    }
-    .title .tagline{
-      margin:2px 0 0; font-size:12.5px; color:var(--muted);
-    }
+  .typing::after{content:"▋"; margin-left:.1em; color:var(--cyan); animation:blink .8s infinite}
+  @keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
 
-    /* Controls */
-    .controls{ display:flex; align-items:center; gap:10px; flex-wrap:wrap }
-    .pill{
-      display:inline-flex; align-items:center; gap:10px;
-      padding:10px 14px; border-radius:999px; cursor:pointer; border:1px solid var(--border);
-      background:#fff; color:var(--text); font-weight:700;
-      box-shadow: var(--card-shadow);
-      transition: transform .12s ease, box-shadow .2s ease;
-    }
-    .pill:active{ transform: translateY(1px) }
-    .pill.primary{
-      background: linear-gradient(90deg,var(--accent-a),var(--accent-b));
-      color:#fff; border:0;
-      box-shadow: 0 6px 24px rgba(124,58,237,.35), 0 0 24px rgba(6,182,212,.25);
-    }
-    .hint{
-      color:var(--muted); background:#fff; border:1px dashed var(--border);
-      padding:8px 12px; border-radius:999px; font-size:13px;
-    }
-    .status{
-      padding:8px 12px; border-radius:999px; font-size:13px; font-weight:700;
-      background:#fff; border:1px solid var(--border); color:#334155;
-      transition: background .3s, border-color .3s, color .3s;
-    }
-    .status.listen{ background: #ecfeff; border-color:#a5f3fc; color:#075985 }
-    .status.speak{ background: #fff1f2; border-color:#fecdd3; color:#9f1239 }
-    .status.idle{ background:#f8fafc; }
+  .panel{border:1px solid var(--border); border-radius:18px; padding:16px; box-shadow:var(--shadow); background:#fff}
+  .row{display:flex; gap:10px; flex-wrap:wrap}
+  .btn, .chip{border:1px solid var(--border); background:#fff; padding:10px 14px; border-radius:12px; font-weight:700; cursor:pointer}
+  .btn.primary{
+    background:linear-gradient(90deg,var(--violet),var(--cyan)); color:#fff; border:0;
+    box-shadow:0 0 22px rgba(124,58,237,.28), 0 0 28px rgba(6,182,212,.18);
+  }
+  .chips{display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:10px}
+  @media (max-width:520px){ .chips{grid-template-columns:repeat(2,1fr)} }
+  .muted{color:var(--muted); font-size:14px; margin:8px 0 12px}
 
-    /* Main card */
-    .card{
-      display:grid; grid-template-columns:1.1fr .9fr; gap:20px; align-items:center;
-      width:100%;
-    }
-    @media (max-width: 980px){ .card{ grid-template-columns: 1fr; } }
+  .status{display:inline-block; padding:8px 12px; border-radius:999px; border:1px solid var(--border); font-weight:700; font-size:13px}
+  .listen{background:#ecfeff; border-color:#a5f3fc; color:#075985}
+  .speak{background:#fff1f2; border-color:#fecdd3; color:#9f1239}
+  .idle{background:#f8fafc; color:#334155}
+</style>
 
-    .hero{
-      background: radial-gradient(120% 120% at 10% 10%, rgba(124,58,237,.09) 0%, transparent 50%) ,
-                  radial-gradient(150% 140% at 90% 0%, rgba(6,182,212,.08) 0%, transparent 55%);
-      border:1px solid var(--border); border-radius:24px;
-      padding: clamp(18px,2.2vw,28px); position:relative; overflow:hidden;
-      box-shadow: var(--card-shadow);
-    }
-    .hero h2{
-      margin:0 0 10px; font-family:'Poppins',sans-serif; font-weight:800;
-      font-size: clamp(22px,3.4vw,34px);
-      letter-spacing:.2px;
-    }
-    .hero p{ margin:0; color:var(--muted); font-size: clamp(14px,1.6vw,16px) }
-
-    /* Cyberpunk “blob” mic orb */
-    .blob-wrap{ display:flex; flex-direction:column; align-items:center; gap:14px; margin-top:14px }
-    .blob {
-      width:min(36vh, 380px); height:min(36vh, 380px); position:relative; border-radius:50%;
-      box-shadow: var(--glow);
-      animation: floaty 10s ease-in-out infinite;
-    }
-    @keyframes floaty{ 0%,100%{ transform: translateY(0) } 50%{ transform: translateY(-14px) } }
-
-    .blob-visuals{
-      position:absolute; inset:0; border-radius:inherit;
-      background: conic-gradient(from 180deg at 50% 50%, var(--accent-a) 0%, var(--accent-b) 42%, var(--accent-c) 60%, var(--accent-b) 80%, var(--accent-a) 100%);
-      -webkit-mask: radial-gradient(circle, white 76%, transparent 100%); mask: radial-gradient(circle, white 76%, transparent 100%);
-      filter: saturate(120%) contrast(110%) blur(.2px);
-      animation: hue 12s linear infinite;
-    }
-    @keyframes hue{ 0%{ filter:hue-rotate(0deg) saturate(120%) } 100%{ filter:hue-rotate(360deg) saturate(120%) } }
-
-    .blob-content{ z-index:10; position:absolute; inset:0; display:flex; align-items:center; justify-content:center; text-align:center; }
-    .blob h1{
-      font-family:'Poppins',sans-serif; font-weight:800;
-      font-size: clamp(18px, 2.8vw, 30px); margin:0 18px; color:#0b1220;
-      text-shadow: 0 2px 0 #fff, 0 0 24px rgba(124,58,237,.25);
-      transition: opacity .4s ease; min-height:1.2em;
-    }
-    .typing::after{ content:'▋'; display:inline-block; margin-left:.08em; color:#06b6d4; animation: blink .8s infinite }
-    @keyframes blink{ 0%,100%{opacity:1} 50%{opacity:0} }
-
-    #waveCanvas{ position:absolute; inset:0; z-index:5; opacity:0; transition:opacity .35s ease; mix-blend-mode:overlay; }
-
-    .blob.listening h1, .blob.speaking h1 { opacity:.15 }
-    .blob.listening .blob-visuals{ opacity:.5 }
-    .blob.listening #waveCanvas{ opacity:1 }
-    .blob.speaking{ animation: floaty 10s ease-in-out infinite, speaking-pulse 1.8s ease-in-out infinite }
-    @keyframes speaking-pulse{
-      0%,100%{ filter: drop-shadow(0 0 18px rgba(124,58,237,.35)) drop-shadow(0 0 38px rgba(6,182,212,.25)) }
-      50%{    filter: drop-shadow(0 0 36px rgba(124,58,237,.6)) drop-shadow(0 0 68px rgba(6,182,212,.45)) }
-    }
-
-    /* Right column: friendly student cards */
-    .stack{ display:grid; gap:14px }
-    .cardlet{
-      background:#fff; border:1px solid var(--border); border-radius:18px; padding:16px;
-      box-shadow: var(--card-shadow);
-    }
-    .cardlet h3{ margin:0 0 6px; font-size:16px; font-weight:800; font-family:'Poppins',sans-serif }
-    .cardlet p{ margin:0; color:var(--muted); font-size:14px }
-
-    .quick-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:12px }
-    .chip{
-      background:linear-gradient(90deg,#fff, #fafcff); border:1px solid var(--border);
-      border-radius:14px; padding:10px 12px; font-weight:700; font-size:13px; text-align:center;
-      cursor:pointer; transition: transform .12s ease, box-shadow .18s ease;
-    }
-    .chip:hover{ transform:translateY(-2px); box-shadow: var(--glow) }
-
-    .cta-row{ display:flex; gap:10px; flex-wrap:wrap; margin-top:14px }
-    .btn{
-      display:inline-flex; align-items:center; gap:10px; padding:12px 16px; border-radius:12px; font-weight:800; cursor:pointer; border:1px solid var(--border); background:#fff;
-      box-shadow: var(--card-shadow);
-      transition: transform .12s ease, box-shadow .18s ease;
-    }
-    .btn.primary{
-      background: linear-gradient(90deg,var(--accent-a),var(--accent-b)); color:#fff; border:0;
-      box-shadow: var(--glow);
-    }
-    .btn:hover{ transform: translateY(-2px) }
-
-    /* Footer */
-    .footer{
-      color:#6b7280; text-align:center; font-size:14px;
-    }
-    .footer a{ color:#6b21a8; text-decoration:none; border-bottom:1px solid rgba(124,58,237,.25) }
-  </style>
-
-  <!-- Your TTS/STT module -->
-  <script type="module" src="/script.js"></script>
+<script type="module" src="/script.js"></script>
 </head>
 <body>
-  <div class="top-strip" aria-hidden="true"></div>
-
-  <div class="wrap">
-    <!-- Header -->
-    <div class="topbar">
-      <div class="brand">
-        <img src="/aau.png" alt="AAU" class="logo">
-        <div class="title">
-          <h1>EdVance AI</h1>
-          <div class="tagline">Where learning meets innovations — from AAU students to AAU students</div>
-        </div>
-      </div>
-
-      <div class="controls">
-        <button id="toggle" class="pill primary">Voice Off</button>
-        <div class="hint">Tip: press <b>M</b> to toggle mic</div>
-        <div id="vstat" class="status idle">Idle</div>
+  <header class="top">
+    <div class="brand">
+      <img class="logo" src="/aau.png" alt="AAU logo">
+      <div class="title">
+        <h1>EdVance AI</h1>
+        <div class="tagline">Where learning meets innovations — from AAU students to AAU students</div>
       </div>
     </div>
+    <div class="row">
+      <button id="toggle" class="btn primary">Voice Off</button>
+      <span id="vstat" class="status idle">Idle</span>
+    </div>
+  </header>
 
-    <!-- Main -->
-    <div class="card">
-      <!-- Left: Hero + Mic Orb -->
-      <section class="hero">
-        <h2>AI tutor in your pocket.</h2>
-        <p>Ask questions, review notes, practice quizzes, and track your progress. Built by AAU students, for AAU students.</p>
+  <main class="wrap">
+    <section class="card">
+      <div class="hero">
+        <h2>AI tutor, super simple.</h2>
+        <p>Ask, learn, and practice — no clutter.</p>
 
-        <div class="blob-wrap">
-          <div class="blob" aria-live="polite">
-            <div class="blob-visuals"></div>
-            <canvas id="waveCanvas"></canvas>
-            <div class="blob-content">
-              <h1></h1>
-            </div>
-          </div>
-          <div class="cta-row">
-            <button class="btn primary" id="startChat">Start chatting</button>
-            <button class="btn" id="askTip">Try: “Explain derivatives like I’m new”</button>
-          </div>
-        </div>
-      </section>
-
-      <!-- Right: Student-friendly cards -->
-      <aside class="stack">
-        <div class="cardlet">
-          <h3>Quick Start</h3>
-          <p>Choose a focus to begin.</p>
-          <div class="quick-grid">
-            <div class="chip" data-say="Help me revise Calculus limits">Calculus</div>
-            <div class="chip" data-say="Quiz me on Operating Systems">OS</div>
-            <div class="chip" data-say="Explain DB normalization with examples">Databases</div>
-            <div class="chip" data-say="Practice English essay outline">English</div>
-            <div class="chip" data-say="GMAT: Number properties warm-up">GMAT</div>
-            <div class="chip" data-say="Intro to AI: what is gradient descent?">AI Basics</div>
-          </div>
+        <div class="orb" id="orb" aria-live="polite">
+          <canvas id="wave"></canvas>
+          <div id="headline" class="headline"></div>
         </div>
 
-        <div class="cardlet">
-          <h3>Today’s Goals</h3>
-          <p>Set 3 small wins for today.</p>
-          <div class="quick-grid">
-            <div class="chip" data-say="Make me a 30-minute study plan for Calculus">Study Plan</div>
-            <div class="chip" data-say="Create 10 flashcards for OS threads vs processes">Flashcards</div>
-            <div class="chip" data-say="Give me 5 practice questions on SQL JOINs">Practice Qs</div>
-          </div>
+        <div class="row" style="margin-top:12px">
+          <button id="start" class="btn primary">Start chatting</button>
+          <button id="example" class="btn">“Explain derivatives simply”</button>
         </div>
+      </div>
 
-        <div class="cardlet">
-          <h3>Progress</h3>
-          <p>Keep momentum going! Try a 10-minute review sprint.</p>
-          <div class="cta-row">
-            <button class="btn primary" data-say="Start a 10 minute review on yesterday's topic">10-min Sprint</button>
-            <button class="btn" data-say="Summarize my last chat and make next steps">Next Steps</button>
-          </div>
+      <aside class="panel">
+        <div class="muted">Jump in with a topic:</div>
+        <div class="chips">
+          <button class="chip" data-say="Help me revise Calculus limits">Calculus</button>
+          <button class="chip" data-say="Quiz me on Operating Systems basics">OS</button>
+          <button class="chip" data-say="Explain database normalization with examples">Databases</button>
+          <button class="chip" data-say="Create 8 flashcards for English vocab">English</button>
+          <button class="chip" data-say="GMAT number properties warm-up">GMAT</button>
+          <button class="chip" data-say="What is gradient descent in simple terms?">AI Basics</button>
         </div>
       </aside>
-    </div>
+    </section>
+  </main>
 
-    <!-- Footer -->
-    <div class="footer">
-      Made with ❤️ by AAU students • EdVance AI
-    </div>
-  </div>
+<script>
+  const $ = s => document.querySelector(s);
+  const $$ = s => document.querySelectorAll(s);
 
-  <!-- UI glue: talks to the module via window.edgeTTS -->
-  <script>
-    const $ = s => document.querySelector(s);
-    const $$ = s => document.querySelectorAll(s);
+  const toggleBtn = $('#toggle');
+  const vstat = $('#vstat');
+  const startBtn = $('#start');
+  const exampleBtn = $('#example');
+  const chips = $$('.chip');
 
-    const toggleBtn = $('#toggle'), voiceStatus = $('#vstat'), blob = $('.blob');
-    const startBtn = $('#startChat');
-    const chips = $$('.chip, .btn[data-say]');
-    const history = [];
+  const orb = $('#orb');
+  const wave = $('#wave');
+  const headline = $('#headline');
 
-    function showStatus(kind, text) {
-      voiceStatus.className = `status ${kind}`;
-      voiceStatus.textContent = text;
-      blob.classList.remove('listening', 'speaking');
-      stopWaveAnimation();
-      if (kind === 'listen') { blob.classList.add('listening'); startWaveAnimation(); }
-      else if (kind === 'speak') { blob.classList.add('speaking'); }
-    }
+  let voiceOn = false;
+  const history = [];
 
-    async function postJSON(url, payload){
-      const r = await fetch(url, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
-      const text = await r.text();
-      if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + text);
-      return JSON.parse(text);
-    }
+  function setStatus(kind, text){
+    vstat.className = `status ${kind}`;
+    vstat.textContent = text;
+    wave.style.opacity = (kind === 'listen') ? 1 : 0;
+  }
 
-    // Mic toggle
-    let voiceOn = false;
-    function toggleVoice(){
-      voiceOn = !voiceOn;
-      toggleBtn.textContent = voiceOn ? 'Voice On' : 'Voice Off';
-      if (window.edgeTTS) { window.edgeTTS.toggleVoice(voiceOn); }
-      showStatus(voiceOn ? 'listen' : 'idle', voiceOn ? 'Listening' : 'Idle');
-    }
-    toggleBtn.onclick = toggleVoice;
-    document.addEventListener('keydown', (e)=>{ if (e.key.toLowerCase()==='m'){ e.preventDefault(); toggleVoice(); }});
+  function toggleVoice(){
+    voiceOn = !voiceOn;
+    toggleBtn.textContent = voiceOn ? 'Voice On' : 'Voice Off';
+    if (window.edgeTTS) window.edgeTTS.toggleVoice(voiceOn);
+    setStatus(voiceOn ? 'listen' : 'idle', voiceOn ? 'Listening' : 'Idle');
+  }
 
-    // Start chat CTA
-    startBtn?.addEventListener('click', () => {
-      if (!voiceOn) toggleVoice();
-      if (window.edgeTTS) window.edgeTTS.speak("Hi! I'm EdVance AI. What would you like to learn today?");
-    });
+  toggleBtn.addEventListener('click', toggleVoice);
+  document.addEventListener('keydown', e => { if (e.key.toLowerCase()==='m'){ e.preventDefault(); toggleVoice(); }});
 
-    // Quick chips speak helpers
-    chips.forEach(el => el.addEventListener('click', () => {
-      const say = el.getAttribute('data-say');
-      if (window.edgeTTS && say){ window.edgeTTS.speak(say); }
-    }));
+  startBtn.addEventListener('click', () => {
+    if (!voiceOn) toggleVoice();
+    if (window.edgeTTS) window.edgeTTS.speak("Hi! I'm EdVance AI. What would you like to learn today?");
+  });
 
-    // Handle recognized text -> call /api/chat -> speak reply
-    async function handleUserText(text){
-      history.push({role:'user', content:text});
-      try{
-        showStatus('idle','Thinking…');
-        const res = await postJSON('/api/chat', {messages: history.slice(-8)});
-        const raw = res.reply || '';
-        const words = raw.trim().split(/\s+/);
-        const reply = words.length > 100 ? words.slice(0, 100).join(' ') + '…' : raw;
-        history.push({role:'assistant', content:reply});
+  exampleBtn.addEventListener('click', () => {
+    if (window.edgeTTS) window.edgeTTS.speak("Explain derivatives simply");
+  });
 
-        if (window.edgeTTS) {
-          showStatus('speak','Speaking');
-          window.edgeTTS.speak(reply);
-          setTimeout(()=> voiceOn ? showStatus('listen','Listening') : showStatus('idle','Idle'), Math.min(3000, reply.length*25));
-        }
-      }catch(e){
-        console.warn('Chat error', e);
-        if (window.edgeTTS) {
-          showStatus('speak','Speaking');
-          window.edgeTTS.speak('Sorry, I had trouble reaching the server.');
-          setTimeout(()=> voiceOn ? showStatus('listen','Listening') : showStatus('idle','Idle'), 1500);
-        }
+  chips.forEach(c => c.addEventListener('click', () => {
+    const say = c.getAttribute('data-say');
+    if (window.edgeTTS && say) window.edgeTTS.speak(say);
+  }));
+
+  async function postJSON(url, payload){
+    const r = await fetch(url, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
+    const t = await r.text();
+    if(!r.ok) throw new Error(t);
+    return JSON.parse(t);
+  }
+  async function handleUserText(text){
+    history.push({role:'user', content:text});
+    try{
+      setStatus('idle','Thinking…');
+      const res = await postJSON('/api/chat', {messages: history.slice(-8)});
+      const reply = (res.reply || '').trim();
+      history.push({role:'assistant', content:reply});
+      if (window.edgeTTS){
+        setStatus('speak','Speaking');
+        window.edgeTTS.speak(reply);
+        setTimeout(()=> voiceOn ? setStatus('listen','Listening') : setStatus('idle','Idle'), Math.min(2600, reply.length*24));
+      }
+    }catch(e){
+      if (window.edgeTTS){
+        setStatus('speak','Speaking');
+        window.edgeTTS.speak('Sorry, I had trouble reaching the server.');
+        setTimeout(()=> voiceOn ? setStatus('listen','Listening') : setStatus('idle','Idle'), 1200);
       }
     }
+  }
 
-    // Expose handler once TTS loads
-    const attachWhenReady = () => {
-      if (!window.edgeTTS) return requestAnimationFrame(attachWhenReady);
-      window.handleUserText = handleUserText;
-    };
-    attachWhenReady();
+  (function waitForTTS(){
+    if (!window.edgeTTS) return requestAnimationFrame(waitForTTS);
+    window.handleUserText = handleUserText;
+  })();
 
-    // ----- Wave canvas (visualizer) -----
-    const canvas = document.getElementById('waveCanvas'); const ctx = canvas.getContext(' 2d'.trim());
-    let animationFrameId = null;
-    function resizeCanvas() {
-      const dpr = window.devicePixelRatio || 1; const size = blob.clientWidth;
-      canvas.width = size * dpr; canvas.height = size * dpr; ctx.setTransform(dpr,0,0,dpr,0,0);
-    }
-    const waves = [
-      {color:'rgba(124,58,237,0.75)',amp:26,freq:0.022,phase:0,speed:0.032},
-      {color:'rgba(6,182,212,0.85)',amp:34,freq:0.016,phase:2,speed:0.020},
-      {color:'rgba(244,63,94,0.65)',amp:20,freq:0.026,phase:4,speed:0.040}
-    ];
-    function drawWave() {
-      const w = canvas.clientWidth, h = canvas.clientHeight;
-      ctx.clearRect(0, 0, w, h);
-      waves.forEach(wave => {
-        ctx.beginPath(); ctx.strokeStyle = wave.color; ctx.lineWidth = 3;
-        ctx.shadowBlur = 20; ctx.shadowColor = wave.color;
-        for (let x=0; x<w; x++) {
-          const y = h/2 + wave.amp * Math.sin(x*wave.freq + wave.phase);
-          x===0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
-        }
-        ctx.stroke(); wave.phase += wave.speed;
+  // typewriter text for headline
+  (function typeLoop(){
+    const text = "Hey, I'm EdVance AI";
+    const speed = 110, pause = 1400, gap = 8000;
+    function type(el, t){
+      return new Promise(done=>{
+        el.textContent = ''; el.classList.add('typing');
+        let i=0; (function step(){
+          if(i<t.length){ el.textContent += t[i++]; return setTimeout(step, speed); }
+          setTimeout(()=>{ el.classList.remove('typing'); done(); }, pause);
+        })();
       });
-      animationFrameId = requestAnimationFrame(drawWave);
     }
-    function startWaveAnimation(){ if (!animationFrameId) { resizeCanvas(); drawWave(); } }
-    function stopWaveAnimation(){
-      if (animationFrameId) {
-        cancelAnimationFrame(animationFrameId); animationFrameId = null;
-        setTimeout(() => { if(!animationFrameId) ctx.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight);}, 90);
-      }
+    (async function loop(){
+      while(true){ await type(headline, text); await new Promise(r=>setTimeout(r, gap)); }
+    })();
+  })();
+
+  // simple wave
+  (function waveViz(){
+    const ctx = wave.getContext('2d');
+    function resize(){
+      const dpr = window.devicePixelRatio || 1;
+      const s = orb.clientWidth;
+      wave.width = s * dpr; wave.height = s * dpr;
+      ctx.setTransform(dpr,0,0,dpr,0,0);
     }
-    window.addEventListener('resize', () => { resizeCanvas(); if(blob.classList.contains('listening')){ startWaveAnimation(); } });
-    resizeCanvas();
-
-    // Typewriter headline
-    document.addEventListener('DOMContentLoaded', () => {
-      const h1 = document.querySelector('.blob h1');
-      const textToType = "Hey, I'm EdVance AI";
-      const typeSpeed = 120;
-      const pauseAfterTyping = 1500;
-      const pauseBetweenLoops = 9000;
-
-      function typewriterEffect(element, text, speed) {
-        return new Promise(resolve => {
-          element.textContent = '';
-          element.classList.add('typing');
-          let i = 0;
-          (function type() {
-            if (i < text.length) {
-              element.textContent += text.charAt(i++);
-              setTimeout(type, speed);
-            } else {
-              setTimeout(() => { element.classList.remove('typing'); resolve(); }, pauseAfterTyping);
-            }
-          })();
-        });
-      }
-      (async function loop(){
-        while (true) {
-          await typewriterEffect(h1, textToType, typeSpeed);
-          await new Promise(r => setTimeout(r, pauseBetweenLoops));
+    const layers = [
+      {c:'rgba(124,58,237,0.8)', a:24, f:0.018, p:0, v:0.028},
+      {c:'rgba(6,182,212,0.8)',  a:32, f:0.014, p:2, v:0.020},
+    ];
+    function draw(){
+      const w = wave.clientWidth, h = wave.clientHeight;
+      ctx.clearRect(0,0,w,h);
+      layers.forEach(L=>{
+        ctx.beginPath(); ctx.strokeStyle=L.c; ctx.lineWidth=3; ctx.shadowBlur=16; ctx.shadowColor=L.c;
+        for(let x=0;x<w;x++){
+          const y = h/2 + L.a * Math.sin(x*L.f + L.p);
+          x?ctx.lineTo(x,y):ctx.moveTo(x,y);
         }
-      })();
+        ctx.stroke(); L.p += L.v;
+      });
+      requestAnimationFrame(draw);
+    }
+    window.addEventListener('resize', resize, {passive:true});
+    resize(); draw();
+  })();
+</script>
 
-      // Optional: ?say=Hi
-      const urlSay = new URLSearchParams(location.search).get('say');
-      if (urlSay) {
-        const prime = () => {
-          if (window.edgeTTS) window.edgeTTS.speak(urlSay);
-          window.removeEventListener('pointerdown', prime, { passive: true });
-        };
-        window.addEventListener('pointerdown', prime, { passive: true });
-      }
-    });
-  </script>
 </body>
 </html>
